@@ -1,0 +1,327 @@
+@page
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "管理控制台";
+}
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">🏠 管理控制台</h1>
+        <div class="text-sm text-gray-500">
+            最後更新: <span id="lastUpdate">-</span>
+            <button onclick="refreshDashboard()" class="ml-2 text-blue-500 hover:text-blue-700">🔄 重新整理</button>
+        </div>
+    </div>
+
+    <!-- 快速統計 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm opacity-80">總用戶數</div>
+                    <div class="text-3xl font-bold" id="totalUsers">-</div>
+                </div>
+                <div class="text-4xl opacity-50">👥</div>
+            </div>
+            <div class="mt-2 text-sm opacity-80">
+                今日新增: <span id="newUsersToday">0</span>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm opacity-80">總群組數</div>
+                    <div class="text-3xl font-bold" id="totalGroups">-</div>
+                </div>
+                <div class="text-4xl opacity-50">📁</div>
+            </div>
+            <div class="mt-2 text-sm opacity-80">
+                活躍群組: <span id="activeGroups">0</span>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm opacity-80">今日訊息</div>
+                    <div class="text-3xl font-bold" id="todayMessages">-</div>
+                </div>
+                <div class="text-4xl opacity-50">📧</div>
+            </div>
+            <div class="mt-2 text-sm opacity-80">
+                成功率: <span id="todaySuccessRate">-</span>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm opacity-80">待處理訊息</div>
+                    <div class="text-3xl font-bold" id="pendingMessages">-</div>
+                </div>
+                <div class="text-4xl opacity-50">⏳</div>
+            </div>
+            <div class="mt-2 text-sm opacity-80">
+                失敗重試: <span id="retryCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 系統狀態 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">⚡ 系統狀態</h2>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">API 服務</span>
+                    <span id="apiStatus" class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">運作中</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">資料庫連線</span>
+                    <span id="dbStatus" class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">正常</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">LINE API 配額</span>
+                    <div class="flex items-center">
+                        <div class="w-32 h-2 bg-gray-200 rounded-full mr-2">
+                            <div id="lineQuotaBar" class="h-full bg-blue-500 rounded-full" style="width: 15%"></div>
+                        </div>
+                        <span id="lineQuota" class="text-sm text-gray-500">150 / 1000</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">背景服務</span>
+                    <span id="bgServiceStatus" class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">運作中</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">🚀 快速操作</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <a href="/Admin/Users" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                    <span class="text-2xl mr-3">👥</span>
+                    <div>
+                        <div class="font-medium">用戶管理</div>
+                        <div class="text-sm text-gray-500">查看與編輯用戶</div>
+                    </div>
+                </a>
+                <a href="/Admin/Groups" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                    <span class="text-2xl mr-3">📁</span>
+                    <div>
+                        <div class="font-medium">群組管理</div>
+                        <div class="text-sm text-gray-500">管理訂閱群組</div>
+                    </div>
+                </a>
+                <a href="/Admin/Messages" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition">
+                    <span class="text-2xl mr-3">📧</span>
+                    <div>
+                        <div class="font-medium">訊息記錄</div>
+                        <div class="text-sm text-gray-500">查看發送記錄</div>
+                    </div>
+                </a>
+                <a href="/Admin/Reports" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition">
+                    <span class="text-2xl mr-3">📊</span>
+                    <div>
+                        <div class="font-medium">報表分析</div>
+                        <div class="text-sm text-gray-500">統計與分析</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 最近訊息 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">📨 最近訊息</h2>
+                <a href="/Admin/Messages" class="text-sm text-blue-500 hover:text-blue-700">查看全部 →</a>
+            </div>
+            <div id="recentMessages" class="space-y-3">
+                <div class="text-center text-gray-500 py-4">載入中...</div>
+            </div>
+        </div>
+
+        <!-- 最近操作記錄 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">📋 最近操作記錄</h2>
+                <a href="/Admin/AuditLogs" class="text-sm text-blue-500 hover:text-blue-700">查看全部 →</a>
+            </div>
+            <div id="recentLogs" class="space-y-3">
+                <div class="text-center text-gray-500 py-4">載入中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    refreshDashboard();
+});
+
+async function refreshDashboard() {
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-TW');
+    
+    await Promise.all([
+        loadSummary(),
+        loadSystemStatus(),
+        loadRecentMessages(),
+        loadRecentLogs()
+    ]);
+}
+
+async function loadSummary() {
+    try {
+        const data = await adminFetch('/api/v1/admin/reports/summary');
+        if (data.success) {
+            const s = data.data;
+            document.getElementById('totalUsers').textContent = s.totalUsers.toLocaleString();
+            document.getElementById('totalGroups').textContent = s.totalGroups.toLocaleString();
+            document.getElementById('activeGroups').textContent = s.activeGroups?.toLocaleString() || s.totalGroups.toLocaleString();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+    
+    try {
+        const data = await adminFetch('/api/v1/admin/reports/delivery-stats?days=1');
+        if (data.success) {
+            const s = data.data;
+            document.getElementById('todayMessages').textContent = s.total.toLocaleString();
+            document.getElementById('pendingMessages').textContent = s.pending.toLocaleString();
+            document.getElementById('retryCount').textContent = s.failed.toLocaleString();
+            
+            const rate = s.total > 0 ? ((s.sent / s.total) * 100).toFixed(1) : '100';
+            document.getElementById('todaySuccessRate').textContent = `${rate}%`;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadSystemStatus() {
+    try {
+        const data = await adminFetch('/api/v1/admin/reports/overview');
+        if (data.success) {
+            const o = data.data;
+            document.getElementById('newUsersToday').textContent = o.newUsersToday?.toLocaleString() || '0';
+            
+            // 更新系統狀態（模擬）
+            updateStatusBadge('apiStatus', true);
+            updateStatusBadge('dbStatus', true);
+            updateStatusBadge('bgServiceStatus', true);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        updateStatusBadge('apiStatus', false);
+    }
+}
+
+function updateStatusBadge(elementId, isHealthy) {
+    const element = document.getElementById(elementId);
+    if (isHealthy) {
+        element.className = 'px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
+        element.textContent = '正常';
+    } else {
+        element.className = 'px-3 py-1 rounded-full text-sm bg-red-100 text-red-800';
+        element.textContent = '異常';
+    }
+}
+
+async function loadRecentMessages() {
+    try {
+        const data = await adminFetch('/api/v1/admin/messages?pageSize=5');
+        if (data.success) {
+            const container = document.getElementById('recentMessages');
+            const messages = data.data.items;
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-4">暫無訊息</div>';
+                return;
+            }
+            
+            container.innerHTML = messages.map(m => `
+                <div class="flex items-center justify-between py-2 border-b last:border-0">
+                    <div class="flex items-center">
+                        ${getStatusDot(m.status)}
+                        <div class="ml-3">
+                            <div class="text-sm font-medium truncate max-w-xs">${escapeHtml(m.subject || '(無主旨)')}</div>
+                            <div class="text-xs text-gray-500">${m.groupName || '全體'}</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400">${formatTime(m.createdAt)}</div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadRecentLogs() {
+    try {
+        const data = await adminFetch('/api/v1/admin/audit-logs?pageSize=5');
+        if (data.success) {
+            const container = document.getElementById('recentLogs');
+            const logs = data.data.items;
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-4">暫無記錄</div>';
+                return;
+            }
+            
+            container.innerHTML = logs.map(log => `
+                <div class="flex items-center justify-between py-2 border-b last:border-0">
+                    <div>
+                        <span class="text-sm">${log.adminUsername || '系統'}</span>
+                        <span class="text-gray-400 mx-1">執行</span>
+                        <span class="px-2 py-0.5 text-xs rounded ${getActionClass(log.action)}">${log.action}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">${formatTime(log.createdAt)}</div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function getStatusDot(status) {
+    const colors = {
+        'Pending': 'bg-yellow-400',
+        'Sent': 'bg-green-400',
+        'Failed': 'bg-red-400'
+    };
+    return `<div class="w-2 h-2 rounded-full ${colors[status] || 'bg-gray-400'}"></div>`;
+}
+
+function getActionClass(action) {
+    if (action.includes('Create') || action.includes('Add')) return 'bg-green-100 text-green-800';
+    if (action.includes('Delete') || action.includes('Remove')) return 'bg-red-100 text-red-800';
+    if (action.includes('Update') || action.includes('Edit')) return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-800';
+}
+
+function formatTime(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '剛剛';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} 分鐘前`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小時前`;
+    return date.toLocaleDateString('zh-TW');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+}

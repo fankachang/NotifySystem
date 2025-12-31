@@ -198,37 +198,37 @@
 
 ### DTOs for User Story 4
 
-- [ ] T058 [P] [US4] 建立使用者查詢回應 DTO src/LineNotify.Api/DTOs/Responses/UserListResponse.cs
-- [ ] T059 [P] [US4] 建立報表回應 DTO src/LineNotify.Api/DTOs/Responses/ReportResponse.cs
-- [ ] T060 [P] [US4] 建立審計日誌回應 DTO src/LineNotify.Api/DTOs/Responses/AuditLogResponse.cs
+- [X] T058 [P] [US4] 建立使用者查詢回應 DTO src/LineNotify.Api/DTOs/Responses/UserListResponse.cs
+- [X] T059 [P] [US4] 建立報表回應 DTO src/LineNotify.Api/DTOs/Responses/ReportResponse.cs
+- [X] T060 [P] [US4] 建立審計日誌回應 DTO src/LineNotify.Api/DTOs/Responses/AuditLogResponse.cs
 
 ### Services for User Story 4
 
-- [ ] T061 [US4] 建立使用者管理服務 src/LineNotify.Api/Services/IUserService.cs
-- [ ] T062 [US4] 實作使用者管理服務 src/LineNotify.Api/Services/UserService.cs
-- [ ] T063 [US4] 建立報表服務介面 src/LineNotify.Api/Services/IReportService.cs
-- [ ] T064 [US4] 實作報表服務（統計、趨勢分析）src/LineNotify.Api/Services/ReportService.cs
+- [X] T061 [US4] 建立使用者管理服務 src/LineNotify.Api/Services/IUserService.cs
+- [X] T062 [US4] 實作使用者管理服務 src/LineNotify.Api/Services/UserService.cs
+- [X] T063 [US4] 建立報表服務介面 src/LineNotify.Api/Services/IReportService.cs
+- [X] T064 [US4] 實作報表服務（統計、趨勢分析）src/LineNotify.Api/Services/ReportService.cs
 
 ### Controllers for User Story 4
 
-- [ ] T065 [US4] 實作 UsersController src/LineNotify.Api/Controllers/UsersController.cs
+- [X] T065 [US4] 實作 UsersController src/LineNotify.Api/Controllers/UsersController.cs
   - GET /api/v1/admin/users
   - PATCH /api/v1/admin/users/{id}
-- [ ] T066 [US4] 實作 ReportsController src/LineNotify.Api/Controllers/ReportsController.cs
+- [X] T066 [US4] 實作 ReportsController src/LineNotify.Api/Controllers/ReportsController.cs
   - GET /api/v1/admin/reports/summary
   - GET /api/v1/admin/reports/delivery-stats
-- [ ] T067 [US4] 實作審計日誌端點 src/LineNotify.Api/Controllers/AuditLogsController.cs
+- [X] T067 [US4] 實作審計日誌端點 src/LineNotify.Api/Controllers/AuditLogsController.cs
   - GET /api/v1/admin/audit-logs
 
 ### 管理後台 UI for User Story 4
 
-- [ ] T068 [US4] 建立管理後台佈局 src/LineNotify.Api/Pages/Admin/_Layout.cshtml
-- [ ] T069 [US4] 建立管理員登入頁面 src/LineNotify.Api/Pages/Admin/Login.cshtml
-- [ ] T070 [US4] 建立使用者管理頁面 src/LineNotify.Api/Pages/Admin/Users.cshtml
-- [ ] T071 [US4] 建立群組管理頁面 src/LineNotify.Api/Pages/Admin/Groups.cshtml
-- [ ] T072 [US4] 建立訊息類型管理頁面 src/LineNotify.Api/Pages/Admin/MessageTypes.cshtml
-- [ ] T073 [US4] 建立訊息歷史頁面 src/LineNotify.Api/Pages/Admin/Messages.cshtml
-- [ ] T074 [US4] 建立統計報表頁面 src/LineNotify.Api/Pages/Admin/Reports.cshtml
+- [X] T068 [US4] 建立管理後台佈局 src/LineNotify.Api/Pages/Admin/_Layout.cshtml
+- [X] T069 [US4] 建立管理員登入頁面 src/LineNotify.Api/Pages/Admin/Login.cshtml
+- [X] T070 [US4] 建立使用者管理頁面 src/LineNotify.Api/Pages/Admin/Users.cshtml
+- [X] T071 [US4] 建立群組管理頁面 src/LineNotify.Api/Pages/Admin/Groups.cshtml
+- [X] T072 [US4] 建立訊息類型管理頁面 src/LineNotify.Api/Pages/Admin/MessageTypes.cshtml
+- [X] T073 [US4] 建立訊息歷史頁面 src/LineNotify.Api/Pages/Admin/Messages.cshtml
+- [X] T074 [US4] 建立統計報表頁面 src/LineNotify.Api/Pages/Admin/Reports.cshtml
 
 **Checkpoint**: User Story 4 完成 - 管理員可透過後台完整管理系統
 

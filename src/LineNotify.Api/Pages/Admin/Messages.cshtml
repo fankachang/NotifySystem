@@ -1,0 +1,329 @@
+@page
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "訊息記錄";
+}
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">📧 訊息記錄</h1>
+        <div class="text-sm text-gray-500">
+            最近 7 天訊息
+        </div>
+    </div>
+
+    <!-- 搜尋與篩選 -->
+    <div class="bg-white rounded-xl shadow-lg p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">狀態</label>
+                <select id="filterStatus" onchange="loadMessages()" class="w-full px-3 py-2 border rounded-md">
+                    <option value="">全部</option>
+                    <option value="Pending">待發送</option>
+                    <option value="Sent">已發送</option>
+                    <option value="Failed">失敗</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">訊息類型</label>
+                <select id="filterType" onchange="loadMessages()" class="w-full px-3 py-2 border rounded-md">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">日期範圍</label>
+                <div class="flex space-x-2">
+                    <input type="date" id="filterStartDate" onchange="loadMessages()" class="flex-1 px-3 py-2 border rounded-md">
+                    <input type="date" id="filterEndDate" onchange="loadMessages()" class="flex-1 px-3 py-2 border rounded-md">
+                </div>
+            </div>
+            <div class="flex items-end">
+                <button onclick="loadMessages()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                    🔍 搜尋
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">總訊息數</div>
+            <div id="statTotal" class="text-2xl font-bold text-gray-800">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">待發送</div>
+            <div id="statPending" class="text-2xl font-bold text-yellow-600">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">已發送</div>
+            <div id="statSent" class="text-2xl font-bold text-green-600">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm text-gray-500">失敗</div>
+            <div id="statFailed" class="text-2xl font-bold text-red-600">-</div>
+        </div>
+    </div>
+
+    <!-- 訊息列表 -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">時間</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">類型</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">主旨</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">群組</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">狀態</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                </tr>
+            </thead>
+            <tbody id="messageTable" class="bg-white divide-y divide-gray-200">
+                <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">載入中...</td></tr>
+            </tbody>
+        </table>
+        
+        <!-- 分頁 -->
+        <div class="px-6 py-3 bg-gray-50 flex items-center justify-between border-t">
+            <div id="paginationInfo" class="text-sm text-gray-600"></div>
+            <div id="paginationButtons" class="flex space-x-2"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 詳情對話框 -->
+<div id="detailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div class="flex justify-between items-start mb-4">
+            <h3 class="text-lg font-semibold">訊息詳情</h3>
+            <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <div id="detailContent" class="space-y-4"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let currentPage = 1;
+const pageSize = 20;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadMessageTypes();
+    loadMessages();
+});
+
+async function loadMessageTypes() {
+    try {
+        const data = await adminFetch('/api/v1/admin/message-types');
+        if (data.success) {
+            const select = document.getElementById('filterType');
+            data.data.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.id;
+                option.textContent = t.name;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadMessages() {
+    const status = document.getElementById('filterStatus').value;
+    const typeId = document.getElementById('filterType').value;
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    
+    let url = `/api/v1/admin/messages?page=${currentPage}&pageSize=${pageSize}`;
+    if (status) url += `&status=${status}`;
+    if (typeId) url += `&messageTypeId=${typeId}`;
+    if (startDate) url += `&startDate=${startDate}`;
+    if (endDate) url += `&endDate=${endDate}`;
+    
+    try {
+        const data = await adminFetch(url);
+        if (data.success) {
+            renderTable(data.data.items);
+            renderPagination(data.data);
+            updateStats(data.data);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function updateStats(data) {
+    document.getElementById('statTotal').textContent = data.totalCount;
+    // 這些數字需要後端提供或另外呼叫 API
+}
+
+function renderTable(messages) {
+    const tbody = document.getElementById('messageTable');
+    
+    if (messages.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">沒有符合的訊息</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = messages.map(m => `
+        <tr>
+            <td class="px-6 py-4 text-sm text-gray-500">
+                ${new Date(m.createdAt).toLocaleString('zh-TW')}
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded" style="background-color: ${m.messageTypeColor || '#808080'}20; color: ${m.messageTypeColor || '#808080'}">
+                    ${m.messageTypeName || '-'}
+                </span>
+            </td>
+            <td class="px-6 py-4 max-w-xs truncate">${escapeHtml(m.subject || '(無主旨)')}</td>
+            <td class="px-6 py-4">
+                ${m.groupName || '(全體)'}
+            </td>
+            <td class="px-6 py-4">
+                ${getStatusBadge(m.status)}
+            </td>
+            <td class="px-6 py-4">
+                <button onclick="viewDetail(${m.id})" class="text-blue-600 hover:text-blue-800 mr-2">詳情</button>
+                ${m.status === 'Failed' ? `<button onclick="retryMessage(${m.id})" class="text-orange-600 hover:text-orange-800">重試</button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getStatusBadge(status) {
+    const statusConfig = {
+        'Pending': { class: 'bg-yellow-100 text-yellow-800', text: '待發送' },
+        'Sent': { class: 'bg-green-100 text-green-800', text: '已發送' },
+        'Failed': { class: 'bg-red-100 text-red-800', text: '失敗' },
+        'PartiallyDelivered': { class: 'bg-orange-100 text-orange-800', text: '部分送達' }
+    };
+    const config = statusConfig[status] || { class: 'bg-gray-100 text-gray-800', text: status };
+    return `<span class="px-2 py-1 text-xs rounded ${config.class}">${config.text}</span>`;
+}
+
+function renderPagination(data) {
+    const info = document.getElementById('paginationInfo');
+    const buttons = document.getElementById('paginationButtons');
+    
+    const start = (data.page - 1) * data.pageSize + 1;
+    const end = Math.min(data.page * data.pageSize, data.totalCount);
+    info.textContent = `顯示 ${start}-${end} / ${data.totalCount} 筆`;
+    
+    buttons.innerHTML = '';
+    
+    if (data.page > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '上一頁';
+        prevBtn.className = 'px-3 py-1 border rounded hover:bg-gray-100';
+        prevBtn.onclick = () => { currentPage = data.page - 1; loadMessages(); };
+        buttons.appendChild(prevBtn);
+    }
+    
+    if (data.page < data.totalPages) {
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '下一頁';
+        nextBtn.className = 'px-3 py-1 border rounded hover:bg-gray-100';
+        nextBtn.onclick = () => { currentPage = data.page + 1; loadMessages(); };
+        buttons.appendChild(nextBtn);
+    }
+}
+
+async function viewDetail(id) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/messages/${id}`);
+        if (data.success) {
+            const m = data.data;
+            document.getElementById('detailContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">訊息 ID:</span>
+                        <span class="ml-2 font-mono">${m.id}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">狀態:</span>
+                        <span class="ml-2">${getStatusBadge(m.status)}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">建立時間:</span>
+                        <span class="ml-2">${new Date(m.createdAt).toLocaleString('zh-TW')}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">發送時間:</span>
+                        <span class="ml-2">${m.sentAt ? new Date(m.sentAt).toLocaleString('zh-TW') : '-'}</span>
+                    </div>
+                </div>
+                <div class="border-t pt-4">
+                    <div class="text-gray-500 text-sm mb-1">主旨</div>
+                    <div class="font-medium">${escapeHtml(m.subject || '(無主旨)')}</div>
+                </div>
+                <div class="border-t pt-4">
+                    <div class="text-gray-500 text-sm mb-1">內容</div>
+                    <pre class="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap">${escapeHtml(m.content)}</pre>
+                </div>
+                ${m.deliveries && m.deliveries.length > 0 ? `
+                <div class="border-t pt-4">
+                    <div class="text-gray-500 text-sm mb-2">派送記錄 (${m.deliveries.length})</div>
+                    <div class="max-h-40 overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-500">
+                                    <th class="pb-2">用戶</th>
+                                    <th class="pb-2">狀態</th>
+                                    <th class="pb-2">時間</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${m.deliveries.map(d => `
+                                    <tr>
+                                        <td class="py-1">${d.userName || d.userId}</td>
+                                        <td class="py-1">${getStatusBadge(d.status)}</td>
+                                        <td class="py-1 text-gray-500">${d.deliveredAt ? new Date(d.deliveredAt).toLocaleString('zh-TW') : '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+                ${m.errorMessage ? `
+                <div class="border-t pt-4">
+                    <div class="text-gray-500 text-sm mb-1">錯誤訊息</div>
+                    <div class="bg-red-50 text-red-800 p-3 rounded text-sm">${escapeHtml(m.errorMessage)}</div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+}
+
+async function retryMessage(id) {
+    if (!confirm('確定要重新發送此訊息嗎？')) return;
+    
+    try {
+        const result = await adminFetch(`/api/v1/admin/messages/${id}/retry`, { method: 'POST' });
+        if (result.success) {
+            loadMessages();
+        } else {
+            alert(result.error?.message || '重試失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+}

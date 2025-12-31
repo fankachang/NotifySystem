@@ -114,6 +114,12 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 // 訊息類型服務
 builder.Services.AddScoped<IMessageTypeService, MessageTypeService>();
 
+// 使用者管理服務
+builder.Services.AddScoped<IUserService, UserService>();
+
+// 報表服務
+builder.Services.AddScoped<IReportService, ReportService>();
+
 // Line Messaging 服務
 builder.Services.AddHttpClient<ILineMessagingService, LineMessagingService>(client =>
 {

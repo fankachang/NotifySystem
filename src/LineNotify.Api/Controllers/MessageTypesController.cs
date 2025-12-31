@@ -11,7 +11,7 @@ namespace LineNotify.Api.Controllers;
 /// 訊息類型管理 API 控制器
 /// </summary>
 [ApiController]
-[Route("admin/message-types")]
+[Route("api/v1/admin/message-types")]
 [Authorize(Policy = "AdminOnly")]
 [Produces("application/json")]
 public class MessageTypesController : ControllerBase

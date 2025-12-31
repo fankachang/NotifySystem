@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Line 通知服務管理後台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+    <style>
+        .sidebar { width: 250px; }
+        .main-content { margin-left: 250px; }
+        .nav-link.active { background-color: rgba(59, 130, 246, 0.1); border-right: 3px solid #3b82f6; }
+        .nav-link:hover { background-color: rgba(59, 130, 246, 0.05); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 側邊欄 -->
+    <aside class="sidebar fixed top-0 left-0 h-full bg-white shadow-lg z-50">
+        <div class="p-4 border-b">
+            <h1 class="text-xl font-bold text-gray-800">📢 管理後台</h1>
+            <p class="text-sm text-gray-500">Line 通知服務</p>
+        </div>
+        
+        <nav class="mt-4">
+            <a href="/Admin/Dashboard" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">📊</span> 儀表板
+            </a>
+            <a href="/Admin/Users" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">👥</span> 使用者管理
+            </a>
+            <a href="/Admin/Groups" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">📁</span> 群組管理
+            </a>
+            <a href="/Admin/MessageTypes" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">🏷️</span> 訊息類型
+            </a>
+            <a href="/Admin/Messages" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">📨</span> 訊息歷史
+            </a>
+            <a href="/Admin/ApiKeys" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">🔑</span> API Key 管理
+            </a>
+            <a href="/Admin/Reports" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                <span class="mr-3">📈</span> 統計報表
+            </a>
+            
+            <div class="border-t mt-4 pt-4">
+                <a href="/Admin/AuditLogs" class="nav-link flex items-center px-4 py-3 text-gray-700">
+                    <span class="mr-3">📋</span> 審計日誌
+                </a>
+            </div>
+        </nav>
+
+        <div class="absolute bottom-0 w-full p-4 border-t">
+            <div class="flex items-center justify-between">
+                <span id="adminName" class="text-sm text-gray-600">管理員</span>
+                <button onclick="adminLogout()" class="text-sm text-red-500 hover:text-red-700">登出</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主內容區 -->
+    <main class="main-content min-h-screen p-6">
+        @RenderBody()
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        // 標記當前頁面的導覽項目
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+
+            // 檢查管理員登入狀態
+            const token = localStorage.getItem('adminToken');
+            if (!token && !currentPath.includes('/Admin/Login')) {
+                window.location.href = '/Admin/Login';
+                return;
+            }
+
+            // 顯示管理員名稱
+            const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+            if (admin.displayName) {
+                const adminNameEl = document.getElementById('adminName');
+                if (adminNameEl) {
+                    adminNameEl.textContent = admin.displayName;
+                }
+            }
+        });
+
+        function adminLogout() {
+            const token = localStorage.getItem('adminToken');
+            fetch('/api/v1/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).finally(() => {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('admin');
+                window.location.href = '/Admin/Login';
+            });
+        }
+
+        // 通用 API 請求函數
+        async function adminFetch(url, options = {}) {
+            const token = localStorage.getItem('adminToken');
+            const defaultOptions = {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            };
+            const mergedOptions = { ...defaultOptions, ...options };
+            if (options.headers) {
+                mergedOptions.headers = { ...defaultOptions.headers, ...options.headers };
+            }
+
+            const response = await fetch(url, mergedOptions);
+            
+            if (response.status === 401) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('admin');
+                window.location.href = '/Admin/Login';
+                throw new Error('Unauthorized');
+            }
+
+            return response.json();
+        }
+    </script>
+</body>
+</html>

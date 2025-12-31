@@ -1,0 +1,386 @@
+@page
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "群組管理";
+}
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">📁 群組管理</h1>
+        <button onclick="openCreateModal()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            + 新增群組
+        </button>
+    </div>
+
+    <div id="groupList" class="grid gap-4">
+        <div class="bg-white rounded-lg p-6 shadow text-center text-gray-500">載入中...</div>
+    </div>
+</div>
+
+<!-- 建立/編輯對話框 -->
+<div id="groupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-screen overflow-y-auto">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4">新增群組</h3>
+        <form id="groupForm" class="space-y-4">
+            <input type="hidden" id="groupId">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">群組代碼 *</label>
+                    <input type="text" id="groupCode" required class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="例：INFRA">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">群組名稱 *</label>
+                    <input type="text" id="groupName" required class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="例：基礎設施團隊">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">說明</label>
+                <textarea id="groupDescription" class="mt-1 w-full px-3 py-2 border rounded-md" rows="2"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">來源主機篩選</label>
+                    <input type="text" id="hostFilter" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="例：web-server-*">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">來源服務篩選</label>
+                    <input type="text" id="serviceFilter" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="例：HTTP">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">接收時段開始</label>
+                    <input type="time" id="activeTimeStart" class="mt-1 w-full px-3 py-2 border rounded-md" value="00:00">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">接收時段結束</label>
+                    <input type="time" id="activeTimeEnd" class="mt-1 w-full px-3 py-2 border rounded-md" value="23:59">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">訊息類型</label>
+                <div id="messageTypeCheckboxes" class="mt-2 flex flex-wrap gap-2">載入中...</div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="suppressDuplicate" checked class="mr-2">
+                    <span>抑制重複告警</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" id="isActive" checked class="mr-2">
+                    <span>啟用</span>
+                </label>
+            </div>
+            <div class="flex justify-end space-x-2 pt-4 border-t">
+                <button type="button" onclick="closeGroupModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">取消</button>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">儲存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 成員管理對話框 -->
+<div id="membersModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+        <h3 class="text-lg font-semibold mb-4">管理成員 - <span id="membersGroupName"></span></h3>
+        <input type="hidden" id="membersGroupId">
+        
+        <div class="mb-4">
+            <h4 class="font-medium mb-2">目前成員</h4>
+            <div id="currentMembers" class="flex flex-wrap gap-2">載入中...</div>
+        </div>
+        
+        <div class="mb-4">
+            <h4 class="font-medium mb-2">新增成員</h4>
+            <div class="flex space-x-2">
+                <select id="userSelect" class="flex-1 px-3 py-2 border rounded-md">
+                    <option value="">選擇使用者...</option>
+                </select>
+                <button type="button" onclick="addMember()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">加入</button>
+            </div>
+        </div>
+        
+        <div class="flex justify-end">
+            <button type="button" onclick="closeMembersModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">關閉</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let messageTypes = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadGroups();
+    loadMessageTypes();
+    document.getElementById('groupForm').addEventListener('submit', handleGroupSubmit);
+});
+
+async function loadMessageTypes() {
+    try {
+        const data = await adminFetch('/api/v1/admin/message-types');
+        if (data.success) {
+            messageTypes = data.data;
+            renderMessageTypeCheckboxes();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderMessageTypeCheckboxes() {
+    const container = document.getElementById('messageTypeCheckboxes');
+    container.innerHTML = messageTypes.map(mt => `
+        <label class="flex items-center px-3 py-1 border rounded cursor-pointer hover:bg-gray-50">
+            <input type="checkbox" name="messageTypes" value="${mt.id}" class="mr-2">
+            <span style="color: ${mt.color}">${mt.icon || '●'}</span>
+            <span class="ml-1">${mt.name}</span>
+        </label>
+    `).join('');
+}
+
+async function loadGroups() {
+    try {
+        const data = await adminFetch('/api/v1/admin/groups');
+        if (data.success) {
+            renderGroups(data.data);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderGroups(groups) {
+    const container = document.getElementById('groupList');
+    
+    if (groups.length === 0) {
+        container.innerHTML = '<div class="bg-white rounded-lg p-6 shadow text-center text-gray-500">尚未建立任何群組</div>';
+        return;
+    }
+    
+    container.innerHTML = groups.map(group => `
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        ${group.name}
+                        <span class="text-sm font-normal text-gray-500">(${group.code})</span>
+                        ${!group.isActive ? '<span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded">已停用</span>' : ''}
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">${group.description || '無說明'}</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick='openMembersModal(${JSON.stringify(group).replace(/'/g, "\\'")})' 
+                            class="text-green-600 hover:text-green-800">成員</button>
+                    <button onclick='openEditModal(${JSON.stringify(group).replace(/'/g, "\\'")})' 
+                            class="text-blue-600 hover:text-blue-800">編輯</button>
+                    <button onclick="deleteGroup(${group.id})" class="text-red-600 hover:text-red-800">刪除</button>
+                </div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                <span>👥 ${group.memberCount || 0} 位成員</span>
+                <span>🏷️ ${group.messageTypes?.map(mt => mt.name).join(', ') || '無訊息類型'}</span>
+                <span>⏰ ${group.activeTimeStart || '00:00'} - ${group.activeTimeEnd || '23:59'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = '新增群組';
+    document.getElementById('groupForm').reset();
+    document.getElementById('groupId').value = '';
+    document.getElementById('isActive').checked = true;
+    document.getElementById('suppressDuplicate').checked = true;
+    document.querySelectorAll('input[name="messageTypes"]').forEach(cb => cb.checked = false);
+    document.getElementById('groupModal').classList.remove('hidden');
+}
+
+function openEditModal(group) {
+    document.getElementById('modalTitle').textContent = '編輯群組';
+    document.getElementById('groupId').value = group.id;
+    document.getElementById('groupCode').value = group.code;
+    document.getElementById('groupName').value = group.name;
+    document.getElementById('groupDescription').value = group.description || '';
+    document.getElementById('hostFilter').value = group.hostFilter || '';
+    document.getElementById('serviceFilter').value = group.serviceFilter || '';
+    document.getElementById('activeTimeStart').value = group.activeTimeStart || '00:00';
+    document.getElementById('activeTimeEnd').value = group.activeTimeEnd || '23:59';
+    document.getElementById('isActive').checked = group.isActive;
+    document.getElementById('suppressDuplicate').checked = group.suppressDuplicate;
+    
+    // 設定訊息類型勾選
+    document.querySelectorAll('input[name="messageTypes"]').forEach(cb => {
+        cb.checked = group.messageTypes?.some(mt => mt.id == cb.value);
+    });
+    
+    document.getElementById('groupModal').classList.remove('hidden');
+}
+
+function closeGroupModal() {
+    document.getElementById('groupModal').classList.add('hidden');
+}
+
+async function handleGroupSubmit(e) {
+    e.preventDefault();
+    
+    const groupId = document.getElementById('groupId').value;
+    const isEdit = !!groupId;
+    
+    const selectedMessageTypes = Array.from(document.querySelectorAll('input[name="messageTypes"]:checked'))
+        .map(cb => parseInt(cb.value));
+    
+    const data = {
+        code: document.getElementById('groupCode').value,
+        name: document.getElementById('groupName').value,
+        description: document.getElementById('groupDescription').value || null,
+        hostFilter: document.getElementById('hostFilter').value || null,
+        serviceFilter: document.getElementById('serviceFilter').value || null,
+        activeTimeStart: document.getElementById('activeTimeStart').value,
+        activeTimeEnd: document.getElementById('activeTimeEnd').value,
+        isActive: document.getElementById('isActive').checked,
+        suppressDuplicate: document.getElementById('suppressDuplicate').checked,
+        messageTypeIds: selectedMessageTypes
+    };
+    
+    try {
+        const url = isEdit ? `/api/v1/admin/groups/${groupId}` : '/api/v1/admin/groups';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const result = await adminFetch(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+        
+        if (result.success) {
+            closeGroupModal();
+            loadGroups();
+        } else {
+            alert(result.error?.message || '操作失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+
+async function deleteGroup(id) {
+    if (!confirm('確定要刪除此群組嗎？')) return;
+    
+    try {
+        const result = await adminFetch(`/api/v1/admin/groups/${id}`, { method: 'DELETE' });
+        if (result.success) {
+            loadGroups();
+        } else {
+            alert(result.error?.message || '刪除失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+
+// 成員管理
+async function openMembersModal(group) {
+    document.getElementById('membersGroupId').value = group.id;
+    document.getElementById('membersGroupName').textContent = group.name;
+    document.getElementById('membersModal').classList.remove('hidden');
+    
+    await loadGroupMembers(group.id);
+    await loadAvailableUsers();
+}
+
+function closeMembersModal() {
+    document.getElementById('membersModal').classList.add('hidden');
+}
+
+async function loadGroupMembers(groupId) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/groups/${groupId}`);
+        if (data.success && data.data.members) {
+            renderCurrentMembers(data.data.members);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderCurrentMembers(members) {
+    const container = document.getElementById('currentMembers');
+    if (members.length === 0) {
+        container.innerHTML = '<span class="text-gray-500">尚無成員</span>';
+        return;
+    }
+    
+    container.innerHTML = members.map(m => `
+        <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded">
+            ${m.displayName}
+            <button onclick="removeMember(${m.id})" class="ml-2 text-red-600 hover:text-red-800">&times;</button>
+        </span>
+    `).join('');
+}
+
+async function loadAvailableUsers() {
+    try {
+        const data = await adminFetch('/api/v1/admin/users?pageSize=100');
+        if (data.success) {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '<option value="">選擇使用者...</option>' +
+                data.data.items.map(u => `<option value="${u.id}">${u.displayName}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function addMember() {
+    const groupId = document.getElementById('membersGroupId').value;
+    const userId = document.getElementById('userSelect').value;
+    
+    if (!userId) {
+        alert('請選擇使用者');
+        return;
+    }
+    
+    try {
+        const result = await adminFetch(`/api/v1/admin/groups/${groupId}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ userIds: [parseInt(userId)] })
+        });
+        
+        if (result.success) {
+            loadGroupMembers(groupId);
+            loadGroups();
+        } else {
+            alert(result.error?.message || '新增失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+
+async function removeMember(userId) {
+    const groupId = document.getElementById('membersGroupId').value;
+    
+    if (!confirm('確定要移除此成員嗎？')) return;
+    
+    try {
+        const result = await adminFetch(`/api/v1/admin/groups/${groupId}/members`, {
+            method: 'DELETE',
+            body: JSON.stringify({ userIds: [userId] })
+        });
+        
+        if (result.success) {
+            loadGroupMembers(groupId);
+            loadGroups();
+        } else {
+            alert(result.error?.message || '移除失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+</script>
+}
