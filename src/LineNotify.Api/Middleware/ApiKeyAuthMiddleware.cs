@@ -125,13 +125,13 @@ public class ApiKeyAuthMiddleware
     }
 
     /// <summary>
-    /// 計算 API Key 雜湊值
+    /// 計算 API Key 雜湊值（使用十六進位格式，與 ApiKeyService 一致）
     /// </summary>
     public static string ComputeApiKeyHash(string apiKey)
     {
         using var sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(apiKey));
-        return Convert.ToBase64String(hashBytes);
+        return Convert.ToHexString(hashBytes).ToLower();
     }
 
     /// <summary>
