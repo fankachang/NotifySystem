@@ -70,7 +70,104 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// 處理 Line Login 回調
+    /// 處理 Line Login 回調 (GET - 從 LINE 重導向)
+    /// </summary>
+    /// <remarks>
+    /// GET /api/v1/auth/line/callback?code=xxx&amp;state=xxx
+    /// LINE OAuth 會以 GET 方式將 code 和 state 傳回此端點
+    /// </remarks>
+    [HttpGet("line/callback")]
+    [ProducesResponseType(typeof(ApiResponse<UserLoginResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse), 400)]
+    [ProducesResponseType(typeof(ApiResponse), 403)]
+    public async Task<IActionResult> LineLoginCallbackGet([FromQuery] string code, [FromQuery] string state)
+    {
+        var ipAddress = GetClientIpAddress();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        try
+        {
+            // 從 Cookie 取得預期的 state
+            var expectedState = Request.Cookies["line_state"];
+
+            // 處理 Line 回調
+            var (user, isNewUser) = await _lineAuthService.HandleCallbackAsync(
+                code,
+                state,
+                expectedState);
+
+            // 清除 state Cookie
+            Response.Cookies.Delete("line_state");
+
+            // 載入使用者的群組和訂閱資訊
+            var userWithGroups = await _dbContext.Users
+                .Include(u => u.GroupMemberships)
+                    .ThenInclude(gm => gm.Group)
+                .Include(u => u.Subscriptions)
+                    .ThenInclude(s => s.MessageType)
+                .FirstAsync(u => u.Id == user.Id);
+
+            // 產生 JWT Token
+            var token = _jwtService.GenerateUserToken(user.Id, user.DisplayName, user.IsAdmin);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            // 記錄登入
+            await _loginLogService.LogUserLoginAsync(user.Id, true, ipAddress, userAgent);
+
+            // 根據使用者狀態決定重導向
+            // 新使用者或沒有群組的使用者 -> 等待分配群組頁面
+            // 有群組的使用者 -> 儀表板
+            var hasGroup = userWithGroups.GroupMemberships.Any(gm => gm.Group.IsActive);
+            var redirectUrl = hasGroup ? "/Dashboard" : "/WaitingForGroup";
+            
+            // 將 token 資訊存入 Cookie，讓前端頁面可以取得
+            Response.Cookies.Append("auth_token", token, new CookieOptions
+            {
+                HttpOnly = false, // 前端 JS 需要讀取
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(1)
+            });
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            });
+            Response.Cookies.Append("user_info", System.Text.Json.JsonSerializer.Serialize(new
+            {
+                id = user.Id,
+                displayName = user.DisplayName,
+                pictureUrl = user.PictureUrl,
+                isNewUser = isNewUser
+            }), new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(1)
+            });
+
+            return Redirect(redirectUrl);
+        }
+        catch (ApiException ex)
+        {
+            await _loginLogService.LogUserLoginAsync(null, false, ipAddress, userAgent, "Line 登入失敗");
+            _logger.LogError(ex, "LINE 登入回調失敗");
+            // 重導向到首頁並顯示錯誤
+            return Redirect($"/?error={Uri.EscapeDataString(ex.Message)}");
+        }
+        catch (Exception ex)
+        {
+            await _loginLogService.LogUserLoginAsync(null, false, ipAddress, userAgent, "Line 登入失敗");
+            _logger.LogError(ex, "LINE 登入回調失敗");
+            return Redirect("/?error=login_failed");
+        }
+    }
+
+    /// <summary>
+    /// 處理 Line Login 回調 (POST - API 用)
     /// </summary>
     /// <remarks>
     /// POST /api/v1/auth/line/callback
@@ -79,7 +176,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<UserLoginResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponse), 400)]
     [ProducesResponseType(typeof(ApiResponse), 403)]
-    public async Task<IActionResult> LineLoginCallback([FromBody] LineLoginCallbackRequest request)
+    public async Task<IActionResult> LineLoginCallbackPost([FromBody] LineLoginCallbackRequest request)
     {
         var ipAddress = GetClientIpAddress();
         var userAgent = Request.Headers.UserAgent.ToString();

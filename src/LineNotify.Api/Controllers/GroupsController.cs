@@ -11,7 +11,7 @@ namespace LineNotify.Api.Controllers;
 /// 群組管理 API 控制器
 /// </summary>
 [ApiController]
-[Route("admin/groups")]
+[Route("api/v1/groups")]
 [Authorize(Policy = "AdminOnly")]
 [Produces("application/json")]
 public class GroupsController : ControllerBase

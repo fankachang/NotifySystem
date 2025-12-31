@@ -53,7 +53,7 @@
             // 檢查是否已登入
             const token = localStorage.getItem('adminToken');
             if (token) {
-                window.location.href = '/Admin/Dashboard';
+                window.location.href = '/Admin';
                 return;
             }
 
@@ -84,11 +84,10 @@
 
                     // 檢查是否需要修改密碼
                     if (data.data.admin.mustChangePassword) {
-                        alert('首次登入需要修改密碼');
-                        // TODO: 跳轉到修改密碼頁面
+                        window.location.href = '/Admin/ChangePassword';
+                    } else {
+                        window.location.href = '/Admin';
                     }
-
-                    window.location.href = '/Admin/Dashboard';
                 } else {
                     errorDiv.textContent = data.error?.message || '登入失敗';
                     errorDiv.classList.remove('hidden');

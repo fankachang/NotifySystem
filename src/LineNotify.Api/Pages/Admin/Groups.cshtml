@@ -314,8 +314,8 @@ function renderCurrentMembers(members) {
     
     container.innerHTML = members.map(m => `
         <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded">
-            ${m.displayName}
-            <button onclick="removeMember(${m.id})" class="ml-2 text-red-600 hover:text-red-800">&times;</button>
+            ${m.userName || m.displayName}
+            <button onclick="removeMember(${m.userId || m.id})" class="ml-2 text-red-600 hover:text-red-800">&times;</button>
         </span>
     `).join('');
 }
@@ -323,34 +323,45 @@ function renderCurrentMembers(members) {
 async function loadAvailableUsers() {
     try {
         const data = await adminFetch('/api/v1/admin/users?pageSize=100');
-        if (data.success) {
+        if (data.success && data.data && data.data.items) {
             const select = document.getElementById('userSelect');
+            const validUsers = data.data.items.filter(u => u.id && u.id > 0);
+            console.log('Available users:', validUsers); // 除錯用
             select.innerHTML = '<option value="">選擇使用者...</option>' +
-                data.data.items.map(u => `<option value="${u.id}">${u.displayName}</option>`).join('');
+                validUsers.map(u => `<option value="${u.id}">${u.displayName} (ID: ${u.id})</option>`).join('');
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error loading users:', error);
     }
 }
 
 async function addMember() {
     const groupId = document.getElementById('membersGroupId').value;
-    const userId = document.getElementById('userSelect').value;
+    const userSelect = document.getElementById('userSelect');
+    const userId = userSelect.value;
     
-    if (!userId) {
+    if (!userId || userId === '0' || userId === '') {
         alert('請選擇使用者');
+        return;
+    }
+    
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum) || userIdNum <= 0) {
+        alert('無效的使用者 ID');
         return;
     }
     
     try {
         const result = await adminFetch(`/api/v1/admin/groups/${groupId}/members`, {
             method: 'POST',
-            body: JSON.stringify({ userIds: [parseInt(userId)] })
+            body: JSON.stringify({ userId: userIdNum })
         });
         
         if (result.success) {
             loadGroupMembers(groupId);
             loadGroups();
+            // 重設下拉選單
+            userSelect.value = '';
         } else {
             alert(result.error?.message || '新增失敗');
         }
@@ -366,9 +377,8 @@ async function removeMember(userId) {
     if (!confirm('確定要移除此成員嗎？')) return;
     
     try {
-        const result = await adminFetch(`/api/v1/admin/groups/${groupId}/members`, {
-            method: 'DELETE',
-            body: JSON.stringify({ userIds: [userId] })
+        const result = await adminFetch(`/api/v1/admin/groups/${groupId}/members/${userId}`, {
+            method: 'DELETE'
         });
         
         if (result.success) {
