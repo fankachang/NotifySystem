@@ -267,17 +267,16 @@ public class MessageDispatchService : IMessageDispatchService
         var query = _dbContext.Subscriptions
             .Include(s => s.User)
             .Include(s => s.Group)
-            .Where(s => s.MessageTypeId == messageType.Id && s.IsActive && s.User.IsActive)
-            .AsQueryable();
-
-        // 如果指定了目標群組，則篩選
-        if (targetGroups != null && targetGroups.Count > 0)
-        {
-            query = query.Where(s => targetGroups.Contains(s.Group.Code));
-        }
+            .Where(s => s.MessageTypeId == messageType.Id && s.IsActive && s.User.IsActive);
 
         // 取得訂閱記錄
         var subscriptions = await query.ToListAsync();
+
+        // 如果指定了目標群組，則在記憶體中篩選（避免 EF Core 參數化問題）
+        if (targetGroups != null && targetGroups.Count > 0)
+        {
+            subscriptions = subscriptions.Where(s => targetGroups.Contains(s.Group.Code)).ToList();
+        }
 
         // 篩選：根據群組的來源主機/服務篩選模式
         var filteredSubscriptions = subscriptions.Where(s =>

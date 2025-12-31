@@ -181,7 +181,40 @@ public class AdminGroupsController : ControllerBase
 
         group.Description = request.Description ?? group.Description;
         group.IsActive = request.IsActive ?? group.IsActive;
+        group.HostFilter = request.HostFilter ?? group.HostFilter;
+        group.ServiceFilter = request.ServiceFilter ?? group.ServiceFilter;
+        group.AllowDuplicateAlerts = !(request.SuppressDuplicate ?? !group.AllowDuplicateAlerts);
+        
+        // 處理接收時段
+        if (!string.IsNullOrEmpty(request.ActiveTimeStart))
+        {
+            group.ReceiveTimeStart = request.ActiveTimeStart;
+        }
+        if (!string.IsNullOrEmpty(request.ActiveTimeEnd))
+        {
+            group.ReceiveTimeEnd = request.ActiveTimeEnd;
+        }
+        
         group.UpdatedAt = DateTime.UtcNow;
+
+        // 處理訊息類型更新
+        if (request.MessageTypeIds != null)
+        {
+            var existingTypes = await _dbContext.GroupMessageTypes
+                .Where(gmt => gmt.GroupId == id)
+                .ToListAsync();
+            _dbContext.GroupMessageTypes.RemoveRange(existingTypes);
+
+            foreach (var typeId in request.MessageTypeIds)
+            {
+                _dbContext.GroupMessageTypes.Add(new GroupMessageType
+                {
+                    GroupId = id,
+                    MessageTypeId = typeId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         await _dbContext.SaveChangesAsync();
 
@@ -399,6 +432,12 @@ public class AdminUpdateGroupRequest
     public string? Name { get; set; }
     public string? Description { get; set; }
     public bool? IsActive { get; set; }
+    public string? HostFilter { get; set; }
+    public string? ServiceFilter { get; set; }
+    public string? ActiveTimeStart { get; set; }
+    public string? ActiveTimeEnd { get; set; }
+    public bool? SuppressDuplicate { get; set; }
+    public List<int>? MessageTypeIds { get; set; }
 }
 
 /// <summary>

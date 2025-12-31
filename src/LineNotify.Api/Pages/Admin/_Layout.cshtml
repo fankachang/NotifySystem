@@ -63,7 +63,7 @@
         @RenderBody()
     </main>
 
-    @await RenderSectionAsync("Scripts", required: false)
+    <!-- Layout 的全域腳本必須在子頁面腳本之前載入，這樣子頁面可以覆蓋全域函數 -->
     <script>
         // 標記當前頁面的導覽項目
         document.addEventListener('DOMContentLoaded', function() {
@@ -103,8 +103,38 @@
             });
         }
 
-        // 通用 API 請求函數
+        // 通用 API 請求函數（返回解析後的 JSON 資料）
         async function adminFetch(url, options = {}) {
+            const token = localStorage.getItem('adminToken');
+            const defaultOptions = {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            };
+            const mergedOptions = { ...defaultOptions, ...options };
+            if (options.headers) {
+                mergedOptions.headers = { ...defaultOptions.headers, ...options.headers };
+            }
+
+            const response = await fetch(url, mergedOptions);
+            
+            if (response.status === 401) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('admin');
+                window.location.href = '/Admin/Login';
+                return { success: false, error: { message: 'Unauthorized' } };
+            }
+
+            try {
+                return await response.json();
+            } catch (e) {
+                return { success: response.ok, data: null };
+            }
+        }
+        
+        // 返回原始 Response 物件的版本（供需要檢查 response.ok 的頁面使用）
+        async function adminFetchRaw(url, options = {}) {
             const token = localStorage.getItem('adminToken');
             const defaultOptions = {
                 headers: {
@@ -129,5 +159,8 @@
             return response;
         }
     </script>
+    
+    <!-- 子頁面腳本區域：可以覆蓋上面的全域函數 -->
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

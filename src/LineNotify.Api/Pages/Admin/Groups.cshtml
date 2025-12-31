@@ -170,20 +170,40 @@ function renderGroups(groups) {
                     <p class="text-sm text-gray-600 mt-1">${group.description || '無說明'}</p>
                 </div>
                 <div class="flex space-x-2">
-                    <button onclick='openMembersModal(${JSON.stringify(group).replace(/'/g, "\\'")})' 
+                    <button onclick="handleMembersClick(${group.id})" 
                             class="text-green-600 hover:text-green-800">成員</button>
-                    <button onclick='openEditModal(${JSON.stringify(group).replace(/'/g, "\\'")})' 
+                    <button onclick="handleEditClick(${group.id})" 
                             class="text-blue-600 hover:text-blue-800">編輯</button>
                     <button onclick="deleteGroup(${group.id})" class="text-red-600 hover:text-red-800">刪除</button>
                 </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
                 <span>👥 ${group.memberCount || 0} 位成員</span>
-                <span>🏷️ ${group.messageTypes?.map(mt => mt.name).join(', ') || '無訊息類型'}</span>
+                <span>🏷️ ${group.messageTypeCount || 0} 種訊息類型</span>
                 <span>⏰ ${group.activeTimeStart || '00:00'} - ${group.activeTimeEnd || '23:59'}</span>
             </div>
         </div>
     `).join('');
+}
+
+// 處理編輯按鈕點擊 - 用 ID 取得詳情
+async function handleEditClick(groupId) {
+    const result = await adminFetch(`/api/v1/admin/groups/${groupId}`);
+    if (!result.success) {
+        alert('載入群組資料失敗');
+        return;
+    }
+    openEditModal(result.data);
+}
+
+// 處理成員按鈕點擊 - 用 ID 取得詳情
+async function handleMembersClick(groupId) {
+    const result = await adminFetch(`/api/v1/admin/groups/${groupId}`);
+    if (!result.success) {
+        alert('載入群組資料失敗');
+        return;
+    }
+    openMembersModal(result.data);
 }
 
 function openCreateModal() {
@@ -211,7 +231,7 @@ function openEditModal(group) {
     
     // 設定訊息類型勾選
     document.querySelectorAll('input[name="messageTypes"]').forEach(cb => {
-        cb.checked = group.messageTypes?.some(mt => mt.id == cb.value);
+        cb.checked = group.messageTypes?.some(mt => mt.messageTypeId == cb.value);
     });
     
     document.getElementById('groupModal').classList.remove('hidden');

@@ -202,6 +202,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// 靜態檔案（必須在路由之前）
+app.UseStaticFiles();
+
 app.UseCors();
 
 // API Key 認證（在 JWT 認證之前）
@@ -219,9 +223,6 @@ app.UseAuditLog();
 
 // 健康檢查端點
 app.MapHealthChecks("/health");
-
-// 靜態檔案
-app.UseStaticFiles();
 
 // Razor Pages 路由
 app.MapRazorPages();
