@@ -89,6 +89,150 @@ docker-compose -f docker-compose.prod.yml logs -f api
    - 啟用 Webhook（如需接收訊息）
    - 取得 Channel Access Token
 
+---
+
+## 本地開發 - 使用 ngrok 測試 LINE Login
+
+在本地開發環境中，LINE OAuth 需要 HTTPS 公開網址才能進行回調。使用 ngrok 可以建立一個臨時的公開通道來測試 LINE Login。
+
+### 安裝 ngrok
+
+#### macOS (使用 Homebrew)
+
+```bash
+brew install ngrok
+```
+
+#### Windows (使用 Chocolatey)
+
+```bash
+choco install ngrok
+```
+
+#### Linux
+
+```bash
+# 下載並解壓縮
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | \
+  sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+  echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | \
+  sudo tee /etc/apt/sources.list.d/ngrok.list && \
+  sudo apt update && sudo apt install ngrok
+```
+
+#### 手動安裝
+
+前往 [ngrok 下載頁面](https://ngrok.com/download) 下載對應系統的版本。
+
+### 設定 ngrok
+
+1. 前往 [ngrok 官網](https://ngrok.com/) 註冊免費帳號
+2. 登入後，在 [Your Authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) 頁面取得 authtoken
+3. 設定 authtoken：
+
+```bash
+ngrok config add-authtoken YOUR_AUTHTOKEN
+```
+
+### 啟動 ngrok 通道
+
+1. 先啟動本地 API 服務（預設 port 5050）：
+
+```bash
+cd src/LineNotify.Api
+dotnet run --urls "http://0.0.0.0:5050"
+```
+
+2. 在另一個終端機啟動 ngrok：
+
+```bash
+ngrok http 5050
+```
+
+3. ngrok 會顯示公開網址，例如：
+
+```
+Forwarding   https://abc123.ngrok-free.app -> http://localhost:5050
+```
+
+### 設定 LINE Login Callback URL
+
+1. 前往 [Line Developers Console](https://developers.line.biz/console/)
+2. 選擇您的 LINE Login Channel
+3. 在「LINE Login」標籤中，設定 Callback URL：
+
+```
+https://your-ngrok-url.ngrok-free.app/api/v1/auth/line/callback
+```
+
+4. 更新 `appsettings.Development.json` 中的設定：
+
+```json
+{
+  "Line": {
+    "ChannelId": "YOUR_CHANNEL_ID",
+    "ChannelSecret": "YOUR_CHANNEL_SECRET",
+    "CallbackUrl": "https://your-ngrok-url.ngrok-free.app/api/v1/auth/line/callback",
+    "MessagingChannelAccessToken": "YOUR_MESSAGING_TOKEN"
+  }
+}
+```
+
+### ngrok 使用注意事項
+
+1. **免費帳號限制**：
+   - 每次啟動 ngrok 會產生新的隨機網址（付費帳號可固定網址）
+   - 每次網址變更後，需同步更新 LINE Console 的 Callback URL
+
+2. **Session 過期**：
+   - 免費帳號的 ngrok session 會在 2 小時後過期
+   - 過期後需重新啟動 ngrok
+
+3. **查看 ngrok 狀態**：
+   - 瀏覽器開啟 `http://localhost:4040` 可查看 ngrok 的請求日誌和狀態
+
+4. **透過 API 取得當前網址**：
+
+```bash
+curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
+```
+
+### 快速啟動腳本
+
+建立 `start-dev.sh` 腳本一鍵啟動：
+
+```bash
+#!/bin/bash
+
+# 啟動 API 服務
+cd src/LineNotify.Api
+dotnet run --urls "http://0.0.0.0:5050" &
+API_PID=$!
+
+# 等待 API 啟動
+sleep 5
+
+# 啟動 ngrok
+ngrok http 5050 &
+NGROK_PID=$!
+
+# 等待 ngrok 啟動
+sleep 3
+
+# 顯示 ngrok 網址
+NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+echo "======================================"
+echo "API 服務已啟動：http://localhost:5050"
+echo "ngrok 公開網址：$NGROK_URL"
+echo "請將以下 Callback URL 設定到 LINE Console："
+echo "$NGROK_URL/api/v1/auth/line/callback"
+echo "======================================"
+
+# 等待退出訊號
+trap "kill $API_PID $NGROK_PID 2>/dev/null" EXIT
+wait
+```
+
 ### Nginx 反向代理（建議）
 
 如果需要使用 HTTPS，建議使用 Nginx 作為反向代理：
