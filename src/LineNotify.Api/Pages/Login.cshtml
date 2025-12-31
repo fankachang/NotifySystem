@@ -1,0 +1,188 @@
+@page
+@model LineNotify.Api.Pages.LoginModel
+@{
+    ViewData["Title"] = "登入";
+}
+
+<div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style="margin-top: -2rem; margin-bottom: -2rem; min-height: calc(100vh - 64px - 80px);">
+    <div class="max-w-md w-full space-y-8 bg-white rounded-xl shadow-2xl p-10">
+        <div>
+            <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
+                📢 Line 通知服務
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                使用您的 Line 帳號登入
+            </p>
+        </div>
+        
+        <div class="mt-8 space-y-6">
+            <div class="rounded-md shadow">
+                <button id="lineLoginBtn" 
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white line-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-4">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 5.82 2 10.5c0 3.07 2.01 5.77 5.12 7.27l-.64 2.36a.5.5 0 00.73.56l2.87-1.7c.61.09 1.24.14 1.92.14 5.52 0 10-3.82 10-8.5S17.52 2 12 2z"/>
+                        </svg>
+                    </span>
+                    使用 Line 登入
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">或</span>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <a href="/Admin/Login" 
+                   class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                    管理員登入
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center text-xs text-gray-500 mt-6">
+            <p>首次登入將自動建立帳號</p>
+            <p>登入後請等待管理員分配群組</p>
+        </div>
+    </div>
+</div>
+
+<div id="loadingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4">
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            <p class="mt-4 text-gray-600">正在跳轉至 Line 登入...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// 從 Cookie 讀取值的輔助函數
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// 刪除 Cookie 的輔助函數
+function deleteCookie(name) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 優先從 Cookie 讀取 token（LINE 登入回調會設定 Cookie）
+    let token = getCookie('auth_token');
+    
+    if (token) {
+        localStorage.setItem('token', token);
+        deleteCookie('auth_token');
+        
+        // 處理 user_info Cookie
+        const userInfoStr = getCookie('user_info');
+        if (userInfoStr) {
+            try {
+                const userInfo = JSON.parse(decodeURIComponent(userInfoStr));
+                localStorage.setItem('user', JSON.stringify(userInfo));
+                deleteCookie('user_info');
+            } catch (e) {
+                console.error('解析 user_info Cookie 失敗', e);
+            }
+        }
+        
+        // 根據使用者資訊判斷跳轉目標
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.groups && user.groups.length > 0) {
+            window.location.href = '/Dashboard';
+        } else {
+            window.location.href = '/WaitingForGroup';
+        }
+        return;
+    }
+    
+    // 檢查 localStorage 中是否已登入
+    token = localStorage.getItem('token');
+    if (token) {
+        window.location.href = '/Dashboard';
+        return;
+    }
+
+    // 檢查 URL 是否有 callback 參數
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    
+    if (code && state) {
+        handleCallback(code, state);
+        return;
+    }
+
+    // 綁定登入按鈕
+    document.getElementById('lineLoginBtn').addEventListener('click', initiateLineLogin);
+});
+
+async function initiateLineLogin() {
+    document.getElementById('loadingModal').classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/api/v1/auth/line/login');
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = data.data.authUrl;
+        } else {
+            alert('無法取得 Line 登入連結：' + (data.error?.message || '未知錯誤'));
+            document.getElementById('loadingModal').classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤，請稍後再試');
+        document.getElementById('loadingModal').classList.add('hidden');
+    }
+}
+
+async function handleCallback(code, state) {
+    document.getElementById('loadingModal').classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/api/v1/auth/line/callback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, state: state })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // 儲存 Token
+            localStorage.setItem('token', data.data.token);
+            localStorage.setItem('refreshToken', data.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+            
+            // 檢查使用者是否有群組
+            const user = data.data.user;
+            if (user.groups && user.groups.length > 0) {
+                window.location.href = '/Dashboard';
+            } else {
+                window.location.href = '/WaitingForGroup';
+            }
+        } else {
+            alert('登入失敗：' + (data.error?.message || '未知錯誤'));
+            window.location.href = '/Login';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('登入過程發生錯誤，請稍後再試');
+        window.location.href = '/Login';
+    }
+}
+</script>
+}

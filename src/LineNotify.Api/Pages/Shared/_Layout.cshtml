@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Line 通知服務</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+    <style>
+        .line-green { background-color: #06C755; }
+        .line-green:hover { background-color: #05a447; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <div>
+                        <a href="/" class="flex items-center py-4 px-2">
+                            <span class="font-semibold text-gray-500 text-lg">📢 Line 通知服務</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3" id="nav-actions">
+                    <!-- 動態導覽列項目由 JavaScript 載入 -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-8">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-gray-400">&copy; 2025 Line 通知服務</p>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        // 檢查登入狀態並更新導覽列
+        (function() {
+            const token = localStorage.getItem('token');
+            const navActions = document.getElementById('nav-actions');
+            
+            if (token) {
+                // 已登入狀態
+                fetch('/api/v1/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const user = data.data;
+                        navActions.innerHTML = `
+                            <a href="/Dashboard" class="py-2 px-2 font-medium text-gray-500 hover:text-green-500 transition">儀表板</a>
+                            <span class="text-gray-600">${user.displayName || user.username}</span>
+                            <button onclick="logout()" class="py-2 px-4 font-medium text-white bg-red-500 rounded hover:bg-red-400 transition">登出</button>
+                        `;
+                    } else {
+                        clearAuthAndRedirect();
+                    }
+                })
+                .catch(() => clearAuthAndRedirect());
+            } else {
+                // 未登入狀態
+                navActions.innerHTML = `
+                    <a href="/Login" class="py-2 px-4 font-medium text-white line-green rounded transition">使用 Line 登入</a>
+                `;
+            }
+        })();
+
+        function logout() {
+            const token = localStorage.getItem('token');
+            fetch('/api/v1/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).finally(() => {
+                clearAuthAndRedirect();
+            });
+        }
+
+        function clearAuthAndRedirect() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            window.location.href = '/Login';
+        }
+    </script>
+</body>
+</html>

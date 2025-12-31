@@ -1,0 +1,88 @@
+@page
+@{
+    ViewData["Title"] = "首頁";
+}
+
+<div class="gradient-bg min-h-screen flex items-center justify-center" style="margin-top: -2rem; margin-bottom: -2rem; min-height: calc(100vh - 64px - 80px);">
+    <div class="text-center text-white px-4">
+        <h1 class="text-5xl font-bold mb-6">📢 Line 通知服務</h1>
+        <p class="text-xl mb-8 opacity-90">
+            整合 Nagios 監控告警與 Line 推播通知<br/>
+            讓您即時掌握系統狀態
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/Login" 
+               class="px-8 py-4 bg-white text-purple-700 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg">
+                使用 Line 登入
+            </a>
+            <a href="/Admin/Login" 
+               class="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-purple-700 transition">
+                管理員入口
+            </a>
+        </div>
+
+        <div class="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">🔔</div>
+                <h3 class="font-semibold text-lg mb-2">即時告警通知</h3>
+                <p class="text-sm opacity-80">整合 Nagios 監控系統，第一時間收到告警推播</p>
+            </div>
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">👥</div>
+                <h3 class="font-semibold text-lg mb-2">群組化管理</h3>
+                <p class="text-sm opacity-80">依團隊、服務分類，精準發送告警給對應人員</p>
+            </div>
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="font-semibold text-lg mb-2">完整追蹤記錄</h3>
+                <p class="text-sm opacity-80">訊息發送歷史、統計報表，完整掌握告警狀況</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 從 Cookie 讀取值的輔助函數
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// 刪除 Cookie 的輔助函數
+function deleteCookie(name) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+}
+
+// 如果已登入，直接跳轉到儀表板
+document.addEventListener('DOMContentLoaded', function() {
+    // 優先從 Cookie 讀取 token
+    let token = getCookie('auth_token');
+    
+    if (token) {
+        localStorage.setItem('token', token);
+        deleteCookie('auth_token');
+        
+        // 處理 user_info Cookie
+        const userInfoStr = getCookie('user_info');
+        if (userInfoStr) {
+            try {
+                const userInfo = JSON.parse(decodeURIComponent(userInfoStr));
+                localStorage.setItem('user', JSON.stringify(userInfo));
+                deleteCookie('user_info');
+            } catch (e) {
+                console.error('解析 user_info Cookie 失敗', e);
+            }
+        }
+        window.location.href = '/Dashboard';
+        return;
+    }
+    
+    token = localStorage.getItem('token');
+    if (token) {
+        window.location.href = '/Dashboard';
+    }
+});
+</script>

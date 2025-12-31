@@ -28,3 +28,6 @@ publish/
 
 # Docker override
 docker-compose.override.yml
+
+# ASP.NET Core Application Settings 
+appsettings.Development.json

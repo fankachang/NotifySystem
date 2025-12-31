@@ -1,0 +1,232 @@
+@page
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "使用者管理";
+}
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">👥 使用者管理</h1>
+        <div class="flex space-x-2">
+            <input type="text" id="searchInput" placeholder="搜尋使用者..."
+                   class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="statusFilter" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">所有狀態</option>
+                <option value="true">啟用</option>
+                <option value="false">停用</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用者</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">群組</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">狀態</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最後登入</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody id="userTable" class="bg-white divide-y divide-gray-200">
+                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">載入中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="pagination" class="flex justify-center space-x-2"></div>
+</div>
+
+<!-- 編輯對話框 -->
+<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">編輯使用者</h3>
+        <form id="editForm" class="space-y-4">
+            <input type="hidden" id="editUserId">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">顯示名稱</label>
+                <input type="text" id="editDisplayName" class="mt-1 w-full px-3 py-2 border rounded-md">
+            </div>
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="editIsActive" class="mr-2">
+                    <span>啟用</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" id="editIsAdmin" class="mr-2">
+                    <span>管理員</span>
+                </label>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">取消</button>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">儲存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let currentPage = 1;
+const pageSize = 20;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+    
+    document.getElementById('searchInput').addEventListener('input', debounce(() => {
+        currentPage = 1;
+        loadUsers();
+    }, 300));
+    
+    document.getElementById('statusFilter').addEventListener('change', () => {
+        currentPage = 1;
+        loadUsers();
+    });
+    
+    document.getElementById('editForm').addEventListener('submit', handleEditSubmit);
+});
+
+async function loadUsers() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    let url = `/api/v1/admin/users?page=${currentPage}&pageSize=${pageSize}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (status) url += `&isActive=${status}`;
+    
+    try {
+        const data = await adminFetch(url);
+        
+        if (data.success) {
+            renderUsers(data.data.items);
+            renderPagination(data.data.pagination);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('userTable');
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">沒有資料</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td class="px-6 py-4">
+                <div class="flex items-center">
+                    <img src="${user.avatarUrl || 'https://via.placeholder.com/40'}" 
+                         class="w-10 h-10 rounded-full mr-3" alt="Avatar">
+                    <div>
+                        <div class="font-medium text-gray-900">${user.displayName}</div>
+                        <div class="text-sm text-gray-500">${user.email || '-'}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                ${user.groups.length > 0 
+                    ? user.groups.map(g => `<span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded mr-1">${g.name}</span>`).join('')
+                    : '<span class="text-gray-400">無群組</span>'}
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs rounded ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${user.isActive ? '啟用' : '停用'}
+                </span>
+                ${user.isAdmin ? '<span class="ml-1 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">管理員</span>' : ''}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+                ${user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '從未登入'}
+            </td>
+            <td class="px-6 py-4">
+                <button onclick="openEditModal(${JSON.stringify(user).replace(/"/g, '&quot;')})" 
+                        class="text-blue-600 hover:text-blue-800">編輯</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderPagination(pagination) {
+    const container = document.getElementById('pagination');
+    const { page, totalPages } = pagination;
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    if (page > 1) {
+        html += `<button onclick="goToPage(${page - 1})" class="px-3 py-1 border rounded hover:bg-gray-100">上一頁</button>`;
+    }
+    
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+        html += `<button onclick="goToPage(${i})" 
+                        class="px-3 py-1 border rounded ${i === page ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}">${i}</button>`;
+    }
+    
+    if (page < totalPages) {
+        html += `<button onclick="goToPage(${page + 1})" class="px-3 py-1 border rounded hover:bg-gray-100">下一頁</button>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    loadUsers();
+}
+
+function openEditModal(user) {
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editDisplayName').value = user.displayName;
+    document.getElementById('editIsActive').checked = user.isActive;
+    document.getElementById('editIsAdmin').checked = user.isAdmin;
+    document.getElementById('editModal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+}
+
+async function handleEditSubmit(e) {
+    e.preventDefault();
+    
+    const userId = document.getElementById('editUserId').value;
+    const data = {
+        displayName: document.getElementById('editDisplayName').value,
+        isActive: document.getElementById('editIsActive').checked,
+        isAdmin: document.getElementById('editIsAdmin').checked
+    };
+    
+    try {
+        const result = await adminFetch(`/api/v1/admin/users/${userId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        
+        if (result.success) {
+            closeEditModal();
+            loadUsers();
+        } else {
+            alert(result.error?.message || '更新失敗');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤');
+    }
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+</script>
+}

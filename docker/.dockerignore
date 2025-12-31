@@ -1,0 +1,44 @@
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+specs/
+Prompt/
+
+# IDE
+.idea/
+.vs/
+*.user
+*.suo
+.vscode/
+
+# Build outputs
+**/bin/
+**/obj/
+**/publish/
+
+# Test results
+**/TestResults/
+*.trx
+
+# Logs
+*.log
+
+# Environment files
+.env*
+appsettings.*.json
+!appsettings.json
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Package locks
+*.lock
+
+# macOS
+.DS_Store

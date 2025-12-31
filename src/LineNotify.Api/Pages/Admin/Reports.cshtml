@@ -1,0 +1,304 @@
+@page
+@{
+    Layout = "/Pages/Admin/_Layout.cshtml";
+    ViewData["Title"] = "報表中心";
+}
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">📊 報表中心</h1>
+        <div class="flex space-x-2">
+            <select id="dateRange" onchange="loadAllReports()" class="px-3 py-2 border rounded-md">
+                <option value="7">最近 7 天</option>
+                <option value="30">最近 30 天</option>
+                <option value="90">最近 90 天</option>
+            </select>
+            <button onclick="exportReport()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                📥 匯出報表
+            </button>
+        </div>
+    </div>
+
+    <!-- 系統總覽 -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-lg font-semibold mb-4">🌐 系統總覽</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600" id="totalUsers">-</div>
+                <div class="text-gray-500 text-sm">總用戶數</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-green-600" id="totalGroups">-</div>
+                <div class="text-gray-500 text-sm">總群組數</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-purple-600" id="totalMessages">-</div>
+                <div class="text-gray-500 text-sm">總訊息數</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-orange-600" id="activeSubscriptions">-</div>
+                <div class="text-gray-500 text-sm">活躍訂閱</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 訊息發送統計 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">📈 訊息發送統計</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">發送中</span>
+                    <span class="text-xl font-bold text-yellow-600" id="msgPending">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">成功送達</span>
+                    <span class="text-xl font-bold text-green-600" id="msgSent">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">發送失敗</span>
+                    <span class="text-xl font-bold text-red-600" id="msgFailed">-</span>
+                </div>
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 font-medium">成功率</span>
+                        <span class="text-xl font-bold" id="successRate">-</span>
+                    </div>
+                    <div class="mt-2 h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="successRateBar" class="h-full bg-green-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 每日訊息趨勢 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">📅 每日訊息趨勢</h2>
+            <div id="dailyChart" class="h-64 flex items-end justify-around space-x-1">
+                <!-- Bar chart will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 訊息類型分布 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">🏷️ 訊息類型分布</h2>
+            <div id="typeDistribution" class="space-y-3">
+                <!-- Type bars will be rendered here -->
+            </div>
+        </div>
+
+        <!-- 熱門群組 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">🔥 訊息量最多的群組</h2>
+            <div id="topGroups" class="space-y-3">
+                <!-- Group list will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近的系統事件 -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-lg font-semibold mb-4">📋 最近的操作記錄</h2>
+        <div id="recentLogs" class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="text-left text-gray-500 text-sm">
+                        <th class="pb-3">時間</th>
+                        <th class="pb-3">管理員</th>
+                        <th class="pb-3">操作</th>
+                        <th class="pb-3">目標</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTable" class="text-sm">
+                    <tr><td colspan="4" class="py-4 text-center text-gray-500">載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllReports();
+});
+
+async function loadAllReports() {
+    const days = document.getElementById('dateRange').value;
+    
+    await Promise.all([
+        loadSummary(),
+        loadDeliveryStats(days),
+        loadDailyTrend(days),
+        loadTypeDistribution(days),
+        loadTopGroups(days),
+        loadRecentLogs()
+    ]);
+}
+
+async function loadSummary() {
+    try {
+        const data = await adminFetch('/api/v1/admin/reports/summary');
+        if (data.success) {
+            const s = data.data;
+            document.getElementById('totalUsers').textContent = s.totalUsers.toLocaleString();
+            document.getElementById('totalGroups').textContent = s.totalGroups.toLocaleString();
+            document.getElementById('totalMessages').textContent = s.totalMessages.toLocaleString();
+            document.getElementById('activeSubscriptions').textContent = s.activeSubscriptions.toLocaleString();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadDeliveryStats(days) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/reports/delivery-stats?days=${days}`);
+        if (data.success) {
+            const s = data.data;
+            document.getElementById('msgPending').textContent = s.pending.toLocaleString();
+            document.getElementById('msgSent').textContent = s.sent.toLocaleString();
+            document.getElementById('msgFailed').textContent = s.failed.toLocaleString();
+            
+            const rate = s.total > 0 ? ((s.sent / s.total) * 100) : 0;
+            document.getElementById('successRate').textContent = `${rate.toFixed(1)}%`;
+            document.getElementById('successRateBar').style.width = `${rate}%`;
+            
+            if (rate >= 90) {
+                document.getElementById('successRate').className = 'text-xl font-bold text-green-600';
+            } else if (rate >= 70) {
+                document.getElementById('successRate').className = 'text-xl font-bold text-yellow-600';
+            } else {
+                document.getElementById('successRate').className = 'text-xl font-bold text-red-600';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadDailyTrend(days) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/reports/daily-trend?days=${days}`);
+        if (data.success && data.data.length > 0) {
+            renderBarChart(data.data);
+        } else {
+            document.getElementById('dailyChart').innerHTML = '<div class="w-full text-center text-gray-500">暫無資料</div>';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('dailyChart').innerHTML = '<div class="w-full text-center text-gray-500">載入失敗</div>';
+    }
+}
+
+function renderBarChart(data) {
+    const container = document.getElementById('dailyChart');
+    const maxCount = Math.max(...data.map(d => d.count), 1);
+    
+    container.innerHTML = data.map(d => {
+        const height = (d.count / maxCount) * 100;
+        const date = new Date(d.date);
+        const label = `${date.getMonth() + 1}/${date.getDate()}`;
+        return `
+            <div class="flex flex-col items-center flex-1">
+                <div class="text-xs text-gray-500 mb-1">${d.count}</div>
+                <div class="w-full bg-blue-500 rounded-t" style="height: ${Math.max(height, 2)}%"></div>
+                <div class="text-xs text-gray-400 mt-1">${label}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function loadTypeDistribution(days) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/reports/type-distribution?days=${days}`);
+        if (data.success && data.data.length > 0) {
+            const container = document.getElementById('typeDistribution');
+            const total = data.data.reduce((sum, t) => sum + t.count, 0);
+            
+            container.innerHTML = data.data.map(t => {
+                const percent = total > 0 ? ((t.count / total) * 100) : 0;
+                return `
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span style="color: ${t.color || '#808080'}">${t.icon || '●'} ${t.name}</span>
+                            <span class="text-gray-500">${t.count} (${percent.toFixed(1)}%)</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width: ${percent}%; background-color: ${t.color || '#808080'}"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            document.getElementById('typeDistribution').innerHTML = '<div class="text-gray-500 text-center">暫無資料</div>';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadTopGroups(days) {
+    try {
+        const data = await adminFetch(`/api/v1/admin/reports/top-groups?days=${days}&limit=5`);
+        if (data.success && data.data.length > 0) {
+            const container = document.getElementById('topGroups');
+            container.innerHTML = data.data.map((g, i) => `
+                <div class="flex items-center justify-between py-2 ${i > 0 ? 'border-t' : ''}">
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-bold mr-3">${i + 1}</span>
+                        <span>${g.groupName}</span>
+                    </div>
+                    <span class="text-gray-500">${g.messageCount.toLocaleString()} 則</span>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('topGroups').innerHTML = '<div class="text-gray-500 text-center">暫無資料</div>';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function loadRecentLogs() {
+    try {
+        const data = await adminFetch('/api/v1/admin/audit-logs?pageSize=10');
+        if (data.success) {
+            const tbody = document.getElementById('logsTable');
+            if (data.data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">暫無記錄</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.data.items.map(log => `
+                <tr class="border-t">
+                    <td class="py-3 text-gray-500">${new Date(log.createdAt).toLocaleString('zh-TW')}</td>
+                    <td class="py-3">${log.adminUsername || '-'}</td>
+                    <td class="py-3">
+                        <span class="px-2 py-1 text-xs rounded ${getActionClass(log.action)}">${log.action}</span>
+                    </td>
+                    <td class="py-3 text-gray-600">${log.targetType || ''} ${log.targetId || ''}</td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function getActionClass(action) {
+    if (action.includes('Create') || action.includes('Add')) return 'bg-green-100 text-green-800';
+    if (action.includes('Delete') || action.includes('Remove')) return 'bg-red-100 text-red-800';
+    if (action.includes('Update') || action.includes('Edit')) return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-800';
+}
+
+function exportReport() {
+    const days = document.getElementById('dateRange').value;
+    // 這裡可以實作匯出 CSV 或 PDF 的功能
+    alert('匯出功能開發中...');
+}
+</script>
+}
