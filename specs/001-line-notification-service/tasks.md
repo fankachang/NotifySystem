@@ -242,24 +242,24 @@
 
 ### DTOs for User Story 5
 
-- [ ] T075 [P] [US5] 建立 API Key 請求 DTO src/LineNotify.Api/DTOs/Requests/ApiKeyRequest.cs
-- [ ] T076 [P] [US5] 建立 API Key 回應 DTO src/LineNotify.Api/DTOs/Responses/ApiKeyResponse.cs
+- [X] T075 [P] [US5] 建立 API Key 請求 DTO src/LineNotify.Api/DTOs/Requests/ApiKeyRequest.cs
+- [X] T076 [P] [US5] 建立 API Key 回應 DTO src/LineNotify.Api/DTOs/Responses/ApiKeyResponse.cs
 
 ### Services for User Story 5
 
-- [ ] T077 [US5] 建立 API Key 服務介面 src/LineNotify.Api/Services/IApiKeyService.cs
-- [ ] T078 [US5] 實作 API Key 服務（建立、雜湊、驗證、撤銷）src/LineNotify.Api/Services/ApiKeyService.cs
+- [X] T077 [US5] 建立 API Key 服務介面 src/LineNotify.Api/Services/IApiKeyService.cs
+- [X] T078 [US5] 實作 API Key 服務（建立、雜湊、驗證、撤銷）src/LineNotify.Api/Services/ApiKeyService.cs
 
 ### Controllers for User Story 5
 
-- [ ] T079 [US5] 實作 ApiKeysController src/LineNotify.Api/Controllers/ApiKeysController.cs
+- [X] T079 [US5] 實作 ApiKeysController src/LineNotify.Api/Controllers/ApiKeysController.cs
   - GET /api/v1/admin/api-keys
   - POST /api/v1/admin/api-keys
   - DELETE /api/v1/admin/api-keys/{id}
 
 ### UI for User Story 5
 
-- [ ] T080 [US5] 建立 API Key 管理頁面 src/LineNotify.Api/Pages/Admin/ApiKeys.cshtml
+- [X] T080 [US5] 建立 API Key 管理頁面 src/LineNotify.Api/Pages/Admin/ApiKeys.cshtml
 
 **Checkpoint**: User Story 5 完成 - 管理員可完整管理 API Key
 

@@ -120,6 +120,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 // 報表服務
 builder.Services.AddScoped<IReportService, ReportService>();
 
+// API Key 服務
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
 // Line Messaging 服務
 builder.Services.AddHttpClient<ILineMessagingService, LineMessagingService>(client =>
 {
