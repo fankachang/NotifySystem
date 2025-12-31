@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LineNotify.Api/LineNotify.Api.csproj" />
+    <Project Path="src/LineNotify.Tests/LineNotify.Tests.csproj" />
+  </Folder>
+</Solution>

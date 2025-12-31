@@ -1,0 +1,68 @@
+# Line 通知服務 - Docker Compose 配置（開發環境）
+# 使用方式: docker compose up -d
+
+services:
+  # MySQL 資料庫服務
+  mysql:
+    image: mysql:8.0
+    container_name: linenotify-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-LineNotify@Dev2025}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-linenotify}
+      MYSQL_USER: ${MYSQL_USER:-linenotify}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-LineNotify@User2025}
+      TZ: Asia/Taipei
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-LineNotify@Dev2025}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - linenotify-network
+
+  # API 服務（開發時可選擇不啟動，直接用 dotnet run）
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: linenotify-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-linenotify};User=${MYSQL_USER:-linenotify};Password=${MYSQL_PASSWORD:-LineNotify@User2025};
+      - Line__ChannelId=${LINE_CHANNEL_ID:-}
+      - Line__ChannelSecret=${LINE_CHANNEL_SECRET:-}
+      - Line__ChannelAccessToken=${LINE_CHANNEL_ACCESS_TOKEN:-}
+      - Jwt__Secret=${JWT_SECRET:-LineNotifyDevSecretKey2025!@#$%^&*()}
+      - Jwt__Issuer=${JWT_ISSUER:-LineNotify}
+      - Jwt__Audience=${JWT_AUDIENCE:-LineNotifyUsers}
+    ports:
+      - "${API_PORT:-5000}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - linenotify-network
+    profiles:
+      - full  # 只在 full profile 時啟動
+
+volumes:
+  mysql_data:
+    name: linenotify-mysql-data
+
+networks:
+  linenotify-network:
+    name: linenotify-network
+    driver: bridge
