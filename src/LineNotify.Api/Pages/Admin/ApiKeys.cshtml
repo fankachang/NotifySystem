@@ -1,6 +1,6 @@
 @page
 @{
-    Layout = "_Layout";
+    Layout = "/Pages/Admin/_Layout.cshtml";
     ViewData["Title"] = "API Key 管理";
 }
 
@@ -291,14 +291,18 @@
             return;
         }
 
-        const defaultOptions = {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
         };
 
-        const response = await fetch(url, { ...defaultOptions, ...options });
+        const fetchOptions = {
+            ...options,
+            headers
+        };
+
+        const response = await fetch(url, fetchOptions);
         
         if (response.status === 401) {
             localStorage.removeItem('adminToken');
@@ -474,7 +478,11 @@
                 body: JSON.stringify(body)
             });
 
-            if (response && response.ok) {
+            if (!response) {
+                return;
+            }
+
+            if (response.ok) {
                 const data = await response.json();
                 hideCreateModal();
                 
@@ -485,8 +493,15 @@
                 loadStats();
                 loadApiKeys();
             } else {
-                const error = await response.json();
-                alert('建立失敗: ' + (error.message || '未知錯誤'));
+                const errorText = await response.text();
+                let errorMessage = '未知錯誤';
+                try {
+                    const error = JSON.parse(errorText);
+                    errorMessage = error.message || error.title || errorText;
+                } catch {
+                    errorMessage = errorText || response.statusText;
+                }
+                alert('建立失敗: ' + errorMessage);
             }
         } catch (error) {
             console.error('建立失敗:', error);

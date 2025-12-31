@@ -123,10 +123,10 @@
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('admin');
                 window.location.href = '/Admin/Login';
-                throw new Error('Unauthorized');
+                return null;
             }
 
-            return response.json();
+            return response;
         }
     </script>
 </body>
