@@ -1,0 +1,30 @@
+# Build
+bin/
+obj/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider/IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Docker override
+docker-compose.override.yml
