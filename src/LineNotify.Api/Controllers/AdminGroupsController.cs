@@ -87,6 +87,11 @@ public class AdminGroupsController : ControllerBase
             Name = group.Name,
             Description = group.Description,
             IsActive = group.IsActive,
+            SuppressDuplicate = !group.AllowDuplicateAlerts,
+            HostFilter = group.HostFilter,
+            ServiceFilter = group.ServiceFilter,
+            ActiveTimeStart = group.ReceiveTimeStart,
+            ActiveTimeEnd = group.ReceiveTimeEnd,
             CreatedAt = group.CreatedAt,
             Members = group.Members.Select(m => new GroupMemberItem
             {
@@ -377,6 +382,11 @@ public class AdminGroupResponse
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsActive { get; set; }
+    public bool SuppressDuplicate { get; set; }
+    public string? HostFilter { get; set; }
+    public string? ServiceFilter { get; set; }
+    public string? ActiveTimeStart { get; set; }
+    public string? ActiveTimeEnd { get; set; }
     public int MemberCount { get; set; }
     public int MessageTypeCount { get; set; }
     public DateTime CreatedAt { get; set; }

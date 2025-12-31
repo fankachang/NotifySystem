@@ -260,34 +260,40 @@ public class MessageDispatchService : IMessageDispatchService
 
         if (messageType == null)
         {
+            _logger.LogWarning("找不到訊息類型: {MessageTypeCode}", messageTypeCode);
             return new List<User>();
         }
 
-        // 基礎查詢：取得訂閱此訊息類型的所有使用者
-        var query = _dbContext.Subscriptions
-            .Include(s => s.User)
-            .Include(s => s.Group)
-            .Where(s => s.MessageTypeId == messageType.Id && s.IsActive && s.User.IsActive);
+        // 查詢訂閱此訊息類型的群組
+        var groupsQuery = _dbContext.Groups
+            .Include(g => g.Members)
+                .ThenInclude(m => m.User)
+            .Include(g => g.MessageTypes)
+            .Where(g => g.IsActive && g.MessageTypes.Any(gmt => gmt.MessageTypeId == messageType.Id));
 
-        // 取得訂閱記錄
-        var subscriptions = await query.ToListAsync();
+        // 先取得所有符合條件的群組
+        var allGroups = await groupsQuery.ToListAsync();
 
         // 如果指定了目標群組，則在記憶體中篩選（避免 EF Core 參數化問題）
+        var groups = allGroups;
         if (targetGroups != null && targetGroups.Count > 0)
         {
-            subscriptions = subscriptions.Where(s => targetGroups.Contains(s.Group.Code)).ToList();
+            groups = allGroups.Where(g => targetGroups.Contains(g.Code)).ToList();
         }
 
-        // 篩選：根據群組的來源主機/服務篩選模式
-        var filteredSubscriptions = subscriptions.Where(s =>
-        {
-            var group = s.Group;
+        _logger.LogInformation("找到符合條件的群組: {GroupCount} 個, 目標群組: {TargetGroups}", 
+            groups.Count, targetGroups != null ? string.Join(",", targetGroups) : "全部");
 
+        // 篩選：根據群組的來源主機/服務篩選模式和接收時段
+        var filteredGroups = groups.Where(group =>
+        {
             // 檢查來源主機篩選
             if (!string.IsNullOrEmpty(group.HostFilter) && !string.IsNullOrEmpty(sourceHost))
             {
                 if (!MatchWildcard(sourceHost, group.HostFilter))
                 {
+                    _logger.LogDebug("群組 {GroupCode} 主機篩選不符: {HostFilter} vs {SourceHost}", 
+                        group.Code, group.HostFilter, sourceHost);
                     return false;
                 }
             }
@@ -297,6 +303,8 @@ public class MessageDispatchService : IMessageDispatchService
             {
                 if (!MatchWildcard(sourceService, group.ServiceFilter))
                 {
+                    _logger.LogDebug("群組 {GroupCode} 服務篩選不符: {ServiceFilter} vs {SourceService}", 
+                        group.Code, group.ServiceFilter, sourceService);
                     return false;
                 }
             }
@@ -304,19 +312,26 @@ public class MessageDispatchService : IMessageDispatchService
             // 檢查接收時段
             if (!IsWithinReceiveWindow(group))
             {
+                _logger.LogDebug("群組 {GroupCode} 不在接收時段內", group.Code);
                 return false;
             }
 
             return true;
         }).ToList();
 
-        // 去重：同一使用者可能透過多個群組訂閱
-        var uniqueUsers = filteredSubscriptions
-            .Select(s => s.User)
+        _logger.LogInformation("篩選後群組數: {FilteredCount}", filteredGroups.Count);
+
+        // 取得所有群組的成員（使用者）
+        var users = filteredGroups
+            .SelectMany(g => g.Members)
+            .Where(m => m.User.IsActive && !string.IsNullOrEmpty(m.User.LineAccessToken))
+            .Select(m => m.User)
             .DistinctBy(u => u.Id)
             .ToList();
 
-        return uniqueUsers;
+        _logger.LogInformation("找到符合條件的訂閱者: {UserCount} 位", users.Count);
+
+        return users;
     }
 
     /// <inheritdoc />
