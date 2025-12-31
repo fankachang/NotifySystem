@@ -52,7 +52,6 @@
 
 - [ ] T011 建立 JWT Token 服務介面 src/LineNotify.Api/Services/IJwtService.cs
 - [ ] T012 實作 JWT Token 服務（產生、驗證、刷新）src/LineNotify.Api/Services/JwtService.cs
-- [ ] T013 [P] 建立 Line OAuth 設定類別 src/LineNotify.Api/Configuration/LineSettings.cs
 - [ ] T014 建立統一 API 回應格式 DTO src/LineNotify.Api/DTOs/Responses/ApiResponse.cs
 - [ ] T015 [P] 建立錯誤碼與例外處理類別 src/LineNotify.Api/Exceptions/ApiException.cs
 
@@ -93,12 +92,13 @@
   - POST /api/v1/auth/refresh
   - POST /api/v1/auth/logout
   - GET /api/v1/auth/me
+  - PATCH /api/v1/auth/me（使用者更新顯示名稱）
 
 ### Frontend for User Story 1
 
 - [ ] T027 [US1] 建立 Line Login 入口頁面 src/LineNotify.Api/Pages/Login.cshtml
 - [ ] T028 [US1] 建立「等待管理員分配群組」提示頁面 src/LineNotify.Api/Pages/WaitingForGroup.cshtml
-- [ ] T029 [US1] 建立使用者儀表板頁面（查看群組與訂閱）src/LineNotify.Api/Pages/Dashboard.cshtml
+- [ ] T029 [US1] 建立使用者儀表板頁面（查看群組與訂閱、發送測試訊息）src/LineNotify.Api/Pages/Dashboard.cshtml
 
 **Checkpoint**: User Story 1 完成 - 使用者可以透過 Line Login 註冊並查看自己的狀態
 
@@ -120,7 +120,7 @@
 ### Services for User Story 2
 
 - [ ] T034 [US2] 建立群組服務介面 src/LineNotify.Api/Services/IGroupService.cs
-- [ ] T035 [US2] 實作群組服務（CRUD、成員管理）src/LineNotify.Api/Services/GroupService.cs
+- [ ] T035 [US2] 實作群組服務（CRUD、成員管理、時段設定衝突驗證）src/LineNotify.Api/Services/GroupService.cs
 - [ ] T036 [US2] 建立訊息類型服務介面 src/LineNotify.Api/Services/IMessageTypeService.cs
 - [ ] T037 [US2] 實作訊息類型服務 src/LineNotify.Api/Services/MessageTypeService.cs
 - [ ] T038 [US2] 建立訂閱同步服務介面 src/LineNotify.Api/Services/ISubscriptionService.cs
@@ -139,7 +139,7 @@
 
 - [ ] T042 [US2] 建立管理員登入請求 DTO src/LineNotify.Api/DTOs/Requests/AdminLoginRequest.cs
 - [ ] T043 [US2] 建立管理員服務介面與實作 src/LineNotify.Api/Services/IAdminService.cs
-- [ ] T044 [US2] 實作管理員服務（登入、密碼修改）src/LineNotify.Api/Services/AdminService.cs
+- [ ] T044 [US2] 實作管理員服務（登入、密碼修改、超級管理員權限檢查）src/LineNotify.Api/Services/AdminService.cs
 - [ ] T045 [US2] 實作 AuthController - 管理員登入端點 src/LineNotify.Api/Controllers/AuthController.cs
   - POST /api/v1/auth/admin/login
   - POST /api/v1/auth/admin/change-password
@@ -302,6 +302,11 @@
 - [ ] T094 [P] 撰寫部署指南 docs/deployment.md
 - [ ] T095 [P] 撰寫 Nagios 整合指南 docs/nagios-integration.md
 - [ ] T096 執行 quickstart.md 驗證完整流程
+
+### 資料庫備份
+
+- [ ] T097 [P] 配置 MySQL 自動備份腳本與排程 docker/mysql/backup.sh
+- [ ] T098 [P] 在 docker-compose.prod.yml 設定備份 Volume 掛載與 cron 排程
 
 ---
 

@@ -14,7 +14,7 @@
 **Storage**: MySQL 8.x（Docker 容器化，使用 Volume 持久化）  
 **Testing**: xUnit, FluentAssertions, Moq  
 **Target Platform**: Docker / Docker Compose（Linux 容器）  
-**Project Type**: Web 應用程式（前後端分離，前端整合至同一專案）  
+**Project Type**: Web 應用程式（整合式架構，Razor Pages 與 API 同一專案）  
 **Performance Goals**: API 回應 <500ms (p95), 端到端延遲 <3s, 支援 100 並發請求  
 **Constraints**: 每日 10,000+ 訊息發送量, 99.5% 可用性  
 **Scale/Scope**: 企業內部使用，預估數百位使用者
@@ -67,7 +67,8 @@ src/
 │   │   ├── Message.cs
 │   │   ├── MessageDelivery.cs
 │   │   ├── ApiKey.cs
-│   │   └── LoginLog.cs
+│   │   ├── LoginLog.cs
+│   │   └── AuditLog.cs
 │   ├── DTOs/                          # 資料傳輸物件
 │   │   ├── Requests/
 │   │   └── Responses/
