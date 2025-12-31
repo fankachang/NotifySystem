@@ -26,12 +26,12 @@
 
 **目的**: 專案初始化與基礎結構（Phase 0 已完成大部分）
 
-- [ ] T001 驗證現有專案結構與 plan.md 一致性
-- [ ] T002 [P] 建立 DTOs 資料夾結構 src/LineNotify.Api/DTOs/Requests/ 和 src/LineNotify.Api/DTOs/Responses/
-- [ ] T003 [P] 建立 Services 介面與實作資料夾 src/LineNotify.Api/Services/
-- [ ] T004 [P] 建立 BackgroundServices 資料夾 src/LineNotify.Api/BackgroundServices/
-- [ ] T005 [P] 建立 Middleware 資料夾 src/LineNotify.Api/Middleware/
-- [ ] T006 [P] 建立 Configuration 資料夾與 LineSettings.cs src/LineNotify.Api/Configuration/LineSettings.cs
+- [X] T001 驗證現有專案結構與 plan.md 一致性
+- [X] T002 [P] 建立 DTOs 資料夾結構 src/LineNotify.Api/DTOs/Requests/ 和 src/LineNotify.Api/DTOs/Responses/
+- [X] T003 [P] 建立 Services 介面與實作資料夾 src/LineNotify.Api/Services/
+- [X] T004 [P] 建立 BackgroundServices 資料夾 src/LineNotify.Api/BackgroundServices/
+- [X] T005 [P] 建立 Middleware 資料夾 src/LineNotify.Api/Middleware/
+- [X] T006 [P] 建立 Configuration 資料夾與 LineSettings.cs src/LineNotify.Api/Configuration/LineSettings.cs
 
 ---
 
@@ -43,23 +43,23 @@
 
 ### 資料庫與實體基礎
 
-- [ ] T007 補完 GroupMember 實體關聯 src/LineNotify.Api/Models/GroupMember.cs（加入 JoinedAt 欄位）
-- [ ] T008 補完 GroupMessageType 實體關聯 src/LineNotify.Api/Models/GroupMessageType.cs
-- [ ] T009 更新 AppDbContext 配置所有實體關聯與索引 src/LineNotify.Api/Data/AppDbContext.cs
+- [X] T007 補完 GroupMember 實體關聯 src/LineNotify.Api/Models/GroupMember.cs（加入 JoinedAt 欄位）
+- [X] T008 補完 GroupMessageType 實體關聯 src/LineNotify.Api/Models/GroupMessageType.cs
+- [X] T009 更新 AppDbContext 配置所有實體關聯與索引 src/LineNotify.Api/Data/AppDbContext.cs
 - [ ] T010 產生 EF Core 資料庫遷移並套用 src/LineNotify.Api/Data/Migrations/
 
 ### 認證與授權基礎架構
 
-- [ ] T011 建立 JWT Token 服務介面 src/LineNotify.Api/Services/IJwtService.cs
-- [ ] T012 實作 JWT Token 服務（產生、驗證、刷新）src/LineNotify.Api/Services/JwtService.cs
-- [ ] T014 建立統一 API 回應格式 DTO src/LineNotify.Api/DTOs/Responses/ApiResponse.cs
-- [ ] T015 [P] 建立錯誤碼與例外處理類別 src/LineNotify.Api/Exceptions/ApiException.cs
+- [X] T011 建立 JWT Token 服務介面 src/LineNotify.Api/Services/IJwtService.cs
+- [X] T012 實作 JWT Token 服務（產生、驗證、刷新）src/LineNotify.Api/Services/JwtService.cs
+- [X] T014 建立統一 API 回應格式 DTO src/LineNotify.Api/DTOs/Responses/ApiResponse.cs
+- [X] T015 [P] 建立錯誤碼與例外處理類別 src/LineNotify.Api/Exceptions/ApiException.cs
 
 ### 中介軟體基礎
 
-- [ ] T016 實作全域例外處理中介軟體 src/LineNotify.Api/Middleware/ExceptionHandlerMiddleware.cs
-- [ ] T017 實作審計日誌中介軟體 src/LineNotify.Api/Middleware/AuditLogMiddleware.cs
-- [ ] T018 在 Program.cs 註冊所有中介軟體與服務 src/LineNotify.Api/Program.cs
+- [X] T016 實作全域例外處理中介軟體 src/LineNotify.Api/Middleware/ExceptionHandlerMiddleware.cs
+- [X] T017 實作審計日誌中介軟體 src/LineNotify.Api/Middleware/AuditLogMiddleware.cs
+- [X] T018 在 Program.cs 註冊所有中介軟體與服務 src/LineNotify.Api/Program.cs
 
 **Checkpoint**: 基礎架構就緒 - 用戶故事實作可以開始
 
@@ -112,35 +112,35 @@
 
 ### DTOs for User Story 2
 
-- [ ] T030 [P] [US2] 建立 Group 請求 DTO src/LineNotify.Api/DTOs/Requests/GroupRequest.cs
-- [ ] T031 [P] [US2] 建立 Group 回應 DTO src/LineNotify.Api/DTOs/Responses/GroupResponse.cs
-- [ ] T032 [P] [US2] 建立 GroupMembers 請求 DTO src/LineNotify.Api/DTOs/Requests/GroupMembersRequest.cs
-- [ ] T033 [P] [US2] 建立 MessageType 請求/回應 DTO src/LineNotify.Api/DTOs/Requests/MessageTypeRequest.cs
+- [X] T030 [P] [US2] 建立 Group 請求 DTO src/LineNotify.Api/DTOs/Requests/GroupRequest.cs
+- [X] T031 [P] [US2] 建立 Group 回應 DTO src/LineNotify.Api/DTOs/Responses/GroupResponse.cs
+- [X] T032 [P] [US2] 建立 GroupMembers 請求 DTO src/LineNotify.Api/DTOs/Requests/GroupMembersRequest.cs
+- [X] T033 [P] [US2] 建立 MessageType 請求/回應 DTO src/LineNotify.Api/DTOs/Requests/MessageTypeRequest.cs
 
 ### Services for User Story 2
 
-- [ ] T034 [US2] 建立群組服務介面 src/LineNotify.Api/Services/IGroupService.cs
-- [ ] T035 [US2] 實作群組服務（CRUD、成員管理、時段設定衝突驗證）src/LineNotify.Api/Services/GroupService.cs
-- [ ] T036 [US2] 建立訊息類型服務介面 src/LineNotify.Api/Services/IMessageTypeService.cs
-- [ ] T037 [US2] 實作訊息類型服務 src/LineNotify.Api/Services/MessageTypeService.cs
-- [ ] T038 [US2] 建立訂閱同步服務介面 src/LineNotify.Api/Services/ISubscriptionService.cs
-- [ ] T039 [US2] 實作訂閱同步服務（自動同步邏輯）src/LineNotify.Api/Services/SubscriptionService.cs
+- [X] T034 [US2] 建立群組服務介面 src/LineNotify.Api/Services/IGroupService.cs
+- [X] T035 [US2] 實作群組服務（CRUD、成員管理、時段設定衝突驗證）src/LineNotify.Api/Services/GroupService.cs
+- [X] T036 [US2] 建立訊息類型服務介面 src/LineNotify.Api/Services/IMessageTypeService.cs
+- [X] T037 [US2] 實作訊息類型服務 src/LineNotify.Api/Services/MessageTypeService.cs
+- [X] T038 [US2] 建立訂閱同步服務介面 src/LineNotify.Api/Services/ISubscriptionService.cs
+- [X] T039 [US2] 實作訂閱同步服務（自動同步邏輯）src/LineNotify.Api/Services/SubscriptionService.cs
 
 ### Controllers for User Story 2
 
-- [ ] T040 [US2] 實作 GroupsController src/LineNotify.Api/Controllers/GroupsController.cs
+- [X] T040 [US2] 實作 GroupsController src/LineNotify.Api/Controllers/GroupsController.cs
   - GET/POST /api/v1/admin/groups
   - GET/PUT/DELETE /api/v1/admin/groups/{id}
   - POST/DELETE /api/v1/admin/groups/{id}/members
-- [ ] T041 [US2] 實作 MessageTypesController src/LineNotify.Api/Controllers/MessageTypesController.cs
+- [X] T041 [US2] 實作 MessageTypesController src/LineNotify.Api/Controllers/MessageTypesController.cs
   - GET/POST/PUT/DELETE /api/v1/admin/message-types
 
 ### 管理員認證 for User Story 2
 
-- [ ] T042 [US2] 建立管理員登入請求 DTO src/LineNotify.Api/DTOs/Requests/AdminLoginRequest.cs
-- [ ] T043 [US2] 建立管理員服務介面與實作 src/LineNotify.Api/Services/IAdminService.cs
-- [ ] T044 [US2] 實作管理員服務（登入、密碼修改、超級管理員權限檢查）src/LineNotify.Api/Services/AdminService.cs
-- [ ] T045 [US2] 實作 AuthController - 管理員登入端點 src/LineNotify.Api/Controllers/AuthController.cs
+- [X] T042 [US2] 建立管理員登入請求 DTO src/LineNotify.Api/DTOs/Requests/AdminLoginRequest.cs
+- [X] T043 [US2] 建立管理員服務介面與實作 src/LineNotify.Api/Services/IAdminService.cs
+- [X] T044 [US2] 實作管理員服務（登入、密碼修改、超級管理員權限檢查）src/LineNotify.Api/Services/AdminService.cs
+- [X] T045 [US2] 實作 AuthController - 管理員登入端點 src/LineNotify.Api/Controllers/AuthController.cs
   - POST /api/v1/auth/admin/login
   - POST /api/v1/auth/admin/change-password
 
@@ -156,30 +156,30 @@
 
 ### DTOs for User Story 3
 
-- [ ] T046 [P] [US3] 建立訊息發送請求 DTO src/LineNotify.Api/DTOs/Requests/SendMessageRequest.cs
-- [ ] T047 [P] [US3] 建立訊息發送回應 DTO src/LineNotify.Api/DTOs/Responses/SendMessageResponse.cs
-- [ ] T048 [P] [US3] 建立訊息查詢回應 DTO src/LineNotify.Api/DTOs/Responses/MessageResponse.cs
+- [X] T046 [P] [US3] 建立訊息發送請求 DTO src/LineNotify.Api/DTOs/Requests/SendMessageRequest.cs
+- [X] T047 [P] [US3] 建立訊息發送回應 DTO src/LineNotify.Api/DTOs/Responses/SendMessageResponse.cs
+- [X] T048 [P] [US3] 建立訊息查詢回應 DTO src/LineNotify.Api/DTOs/Responses/MessageResponse.cs
 
 ### API Key 認證 for User Story 3
 
-- [ ] T049 [US3] 實作 API Key 認證中介軟體 src/LineNotify.Api/Middleware/ApiKeyAuthMiddleware.cs
-- [ ] T050 [US3] 在 Program.cs 註冊 API Key 認證 src/LineNotify.Api/Program.cs
+- [X] T049 [US3] 實作 API Key 認證中介軟體 src/LineNotify.Api/Middleware/ApiKeyAuthMiddleware.cs
+- [X] T050 [US3] 在 Program.cs 註冊 API Key 認證 src/LineNotify.Api/Program.cs
 
 ### Services for User Story 3
 
-- [ ] T051 [US3] 建立 Line Messaging 服務介面 src/LineNotify.Api/Services/ILineMessagingService.cs
-- [ ] T052 [US3] 實作 Line Messaging 服務（Flex Message）src/LineNotify.Api/Services/LineMessagingService.cs
-- [ ] T053 [US3] 建立訊息派送服務介面 src/LineNotify.Api/Services/IMessageDispatchService.cs
-- [ ] T054 [US3] 實作訊息派送服務（查詢訂閱者、去重）src/LineNotify.Api/Services/MessageDispatchService.cs
+- [X] T051 [US3] 建立 Line Messaging 服務介面 src/LineNotify.Api/Services/ILineMessagingService.cs
+- [X] T052 [US3] 實作 Line Messaging 服務（Flex Message）src/LineNotify.Api/Services/LineMessagingService.cs
+- [X] T053 [US3] 建立訊息派送服務介面 src/LineNotify.Api/Services/IMessageDispatchService.cs
+- [X] T054 [US3] 實作訊息派送服務（查詢訂閱者、去重）src/LineNotify.Api/Services/MessageDispatchService.cs
 
 ### Background Services for User Story 3
 
-- [ ] T055 [US3] 實作非同步訊息發送背景服務 src/LineNotify.Api/BackgroundServices/MessageSenderService.cs
-- [ ] T056 [US3] 實作失敗重試背景服務 src/LineNotify.Api/BackgroundServices/RetryService.cs
+- [X] T055 [US3] 實作非同步訊息發送背景服務 src/LineNotify.Api/BackgroundServices/MessageSenderService.cs
+- [X] T056 [US3] 實作失敗重試背景服務 src/LineNotify.Api/BackgroundServices/RetryService.cs
 
 ### Controllers for User Story 3
 
-- [ ] T057 [US3] 實作 MessagesController src/LineNotify.Api/Controllers/MessagesController.cs
+- [X] T057 [US3] 實作 MessagesController src/LineNotify.Api/Controllers/MessagesController.cs
   - POST /api/v1/messages/send
   - GET /api/v1/messages/{id}
   - GET /api/v1/messages
