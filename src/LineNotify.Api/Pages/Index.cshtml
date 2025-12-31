@@ -1,0 +1,53 @@
+@page
+@{
+    ViewData["Title"] = "首頁";
+}
+
+<div class="gradient-bg min-h-screen flex items-center justify-center" style="margin-top: -2rem; margin-bottom: -2rem; min-height: calc(100vh - 64px - 80px);">
+    <div class="text-center text-white px-4">
+        <h1 class="text-5xl font-bold mb-6">📢 Line 通知服務</h1>
+        <p class="text-xl mb-8 opacity-90">
+            整合 Nagios 監控告警與 Line 推播通知<br/>
+            讓您即時掌握系統狀態
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/Login" 
+               class="px-8 py-4 bg-white text-purple-700 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg">
+                使用 Line 登入
+            </a>
+            <a href="/Admin/Login" 
+               class="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-purple-700 transition">
+                管理員入口
+            </a>
+        </div>
+
+        <div class="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">🔔</div>
+                <h3 class="font-semibold text-lg mb-2">即時告警通知</h3>
+                <p class="text-sm opacity-80">整合 Nagios 監控系統，第一時間收到告警推播</p>
+            </div>
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">👥</div>
+                <h3 class="font-semibold text-lg mb-2">群組化管理</h3>
+                <p class="text-sm opacity-80">依團隊、服務分類，精準發送告警給對應人員</p>
+            </div>
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="font-semibold text-lg mb-2">完整追蹤記錄</h3>
+                <p class="text-sm opacity-80">訊息發送歷史、統計報表，完整掌握告警狀況</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 如果已登入，直接跳轉到儀表板
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        window.location.href = '/Dashboard';
+    }
+});
+</script>

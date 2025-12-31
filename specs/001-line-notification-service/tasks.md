@@ -46,12 +46,13 @@
 - [X] T007 補完 GroupMember 實體關聯 src/LineNotify.Api/Models/GroupMember.cs（加入 JoinedAt 欄位）
 - [X] T008 補完 GroupMessageType 實體關聯 src/LineNotify.Api/Models/GroupMessageType.cs
 - [X] T009 更新 AppDbContext 配置所有實體關聯與索引 src/LineNotify.Api/Data/AppDbContext.cs
-- [ ] T010 產生 EF Core 資料庫遷移並套用 src/LineNotify.Api/Data/Migrations/
+- [X] T010 產生 EF Core 資料庫遷移並套用 src/LineNotify.Api/Data/Migrations/
 
 ### 認證與授權基礎架構
 
 - [X] T011 建立 JWT Token 服務介面 src/LineNotify.Api/Services/IJwtService.cs
 - [X] T012 實作 JWT Token 服務（產生、驗證、刷新）src/LineNotify.Api/Services/JwtService.cs
+- [X] T013 產生 EF Core 資料庫遷移並套用 src/LineNotify.Api/Data/Migrations/
 - [X] T014 建立統一 API 回應格式 DTO src/LineNotify.Api/DTOs/Responses/ApiResponse.cs
 - [X] T015 [P] 建立錯誤碼與例外處理類別 src/LineNotify.Api/Exceptions/ApiException.cs
 
@@ -73,20 +74,20 @@
 
 ### DTOs for User Story 1
 
-- [ ] T019 [P] [US1] 建立 Line Login 請求/回應 DTO src/LineNotify.Api/DTOs/Requests/LineLoginRequest.cs
-- [ ] T020 [P] [US1] 建立 Token 回應 DTO src/LineNotify.Api/DTOs/Responses/TokenResponse.cs
-- [ ] T021 [P] [US1] 建立 User 回應 DTO src/LineNotify.Api/DTOs/Responses/UserResponse.cs
+- [X] T019 [P] [US1] 建立 Line Login 請求/回應 DTO src/LineNotify.Api/DTOs/Requests/LineLoginRequest.cs
+- [X] T020 [P] [US1] 建立 Token 回應 DTO src/LineNotify.Api/DTOs/Responses/TokenResponse.cs
+- [X] T021 [P] [US1] 建立 User 回應 DTO src/LineNotify.Api/DTOs/Responses/UserResponse.cs
 
 ### Services for User Story 1
 
-- [ ] T022 [US1] 建立 Line Auth 服務介面 src/LineNotify.Api/Services/ILineAuthService.cs
-- [ ] T023 [US1] 實作 Line Auth 服務（OAuth 流程）src/LineNotify.Api/Services/LineAuthService.cs
-- [ ] T024 [US1] 建立登入記錄服務 src/LineNotify.Api/Services/ILoginLogService.cs
-- [ ] T025 [US1] 實作登入記錄服務 src/LineNotify.Api/Services/LoginLogService.cs
+- [X] T022 [US1] 建立 Line Auth 服務介面 src/LineNotify.Api/Services/ILineAuthService.cs
+- [X] T023 [US1] 實作 Line Auth 服務（OAuth 流程）src/LineNotify.Api/Services/LineAuthService.cs
+- [X] T024 [US1] 建立登入記錄服務 src/LineNotify.Api/Services/ILoginLogService.cs
+- [X] T025 [US1] 實作登入記錄服務 src/LineNotify.Api/Services/LoginLogService.cs
 
 ### Controllers for User Story 1
 
-- [ ] T026 [US1] 實作 AuthController - Line Login 端點 src/LineNotify.Api/Controllers/AuthController.cs
+- [X] T026 [US1] 實作 AuthController - Line Login 端點 src/LineNotify.Api/Controllers/AuthController.cs
   - GET /api/v1/auth/line/login
   - POST /api/v1/auth/line/callback
   - POST /api/v1/auth/refresh
@@ -96,9 +97,9 @@
 
 ### Frontend for User Story 1
 
-- [ ] T027 [US1] 建立 Line Login 入口頁面 src/LineNotify.Api/Pages/Login.cshtml
-- [ ] T028 [US1] 建立「等待管理員分配群組」提示頁面 src/LineNotify.Api/Pages/WaitingForGroup.cshtml
-- [ ] T029 [US1] 建立使用者儀表板頁面（查看群組與訂閱、發送測試訊息）src/LineNotify.Api/Pages/Dashboard.cshtml
+- [X] T027 [US1] 建立 Line Login 入口頁面 src/LineNotify.Api/Pages/Login.cshtml
+- [X] T028 [US1] 建立「等待管理員分配群組」提示頁面 src/LineNotify.Api/Pages/WaitingForGroup.cshtml
+- [X] T029 [US1] 建立使用者儀表板頁面（查看群組與訂閱、發送測試訊息）src/LineNotify.Api/Pages/Dashboard.cshtml
 
 **Checkpoint**: User Story 1 完成 - 使用者可以透過 Line Login 註冊並查看自己的狀態
 

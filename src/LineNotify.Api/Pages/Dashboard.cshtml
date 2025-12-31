@@ -1,0 +1,254 @@
+@page
+@model LineNotify.Api.Pages.DashboardModel
+@{
+    ViewData["Title"] = "儀表板";
+}
+
+<div class="max-w-6xl mx-auto px-4">
+    <!-- 歡迎區塊 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex items-center space-x-4">
+            <div id="userAvatar" class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <span class="text-2xl">👤</span>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    歡迎，<span id="userName">使用者</span>！
+                </h1>
+                <p class="text-gray-500">查看您的群組和訂閱狀態</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+        <!-- 所屬群組 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span class="mr-2">👥</span> 所屬群組
+            </h2>
+            <div id="groupList" class="space-y-3">
+                <div class="animate-pulse">
+                    <div class="h-12 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訂閱的訊息類型 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span class="mr-2">📬</span> 訂閱的訊息類型
+            </h2>
+            <div id="messageTypeList" class="space-y-2">
+                <div class="animate-pulse">
+                    <div class="h-8 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 發送測試訊息 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <span class="mr-2">🔔</span> 測試通知
+        </h2>
+        <p class="text-gray-600 mb-4">
+            點擊下方按鈕向自己發送測試訊息，確認 Line 通知功能正常運作。
+        </p>
+        <button id="sendTestBtn" 
+                class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            發送測試訊息
+        </button>
+        <div id="testResult" class="mt-4 hidden"></div>
+    </div>
+
+    <!-- 最近訊息 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <span class="mr-2">📜</span> 最近收到的訊息
+        </h2>
+        <div id="recentMessages" class="space-y-3">
+            <div class="animate-pulse">
+                <div class="h-16 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let currentUser = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        window.location.href = '/Login';
+        return;
+    }
+
+    loadUserInfo();
+    loadRecentMessages();
+    
+    document.getElementById('sendTestBtn').addEventListener('click', sendTestMessage);
+});
+
+async function loadUserInfo() {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch('/api/v1/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentUser = data.data;
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            
+            // 檢查是否有群組
+            if (!currentUser.groups || currentUser.groups.length === 0) {
+                window.location.href = '/WaitingForGroup';
+                return;
+            }
+            
+            renderUserInfo();
+        } else {
+            localStorage.removeItem('token');
+            window.location.href = '/Login';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('無法載入使用者資訊');
+    }
+}
+
+function renderUserInfo() {
+    // 使用者名稱
+    document.getElementById('userName').textContent = currentUser.displayName;
+    
+    // 頭像
+    if (currentUser.avatarUrl) {
+        document.getElementById('userAvatar').innerHTML = 
+            `<img src="${currentUser.avatarUrl}" class="w-16 h-16 rounded-full object-cover" alt="Avatar">`;
+    }
+    
+    // 群組列表
+    const groupList = document.getElementById('groupList');
+    if (currentUser.groups && currentUser.groups.length > 0) {
+        groupList.innerHTML = currentUser.groups.map(group => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                    <span class="font-medium text-gray-900">${group.name}</span>
+                    <span class="text-sm text-gray-500 ml-2">(${group.code})</span>
+                </div>
+                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已加入</span>
+            </div>
+        `).join('');
+    } else {
+        groupList.innerHTML = '<p class="text-gray-500">尚未加入任何群組</p>';
+    }
+    
+    // 訊息類型列表
+    const messageTypeList = document.getElementById('messageTypeList');
+    if (currentUser.subscribedMessageTypes && currentUser.subscribedMessageTypes.length > 0) {
+        messageTypeList.innerHTML = currentUser.subscribedMessageTypes.map(mt => `
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full" style="background-color: ${getMessageTypeColor(mt.code)}"></span>
+                <span class="text-gray-700">${mt.name}</span>
+                <span class="text-xs text-gray-500">(${mt.code})</span>
+            </div>
+        `).join('');
+    } else {
+        messageTypeList.innerHTML = '<p class="text-gray-500">尚未訂閱任何訊息類型</p>';
+    }
+}
+
+function getMessageTypeColor(code) {
+    const colors = {
+        'CRITICAL': '#FF0000',
+        'WARNING': '#FFA500',
+        'UNKNOWN': '#808080',
+        'OK': '#00FF00',
+        'INFO': '#0000FF'
+    };
+    return colors[code] || '#808080';
+}
+
+async function loadRecentMessages() {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch('/api/v1/messages/me?pageSize=5', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const data = await response.json();
+        const messageContainer = document.getElementById('recentMessages');
+        
+        if (data.success && data.data.items && data.data.items.length > 0) {
+            messageContainer.innerHTML = data.data.items.map(msg => `
+                <div class="p-4 bg-gray-50 rounded-lg border-l-4" style="border-color: ${getMessageTypeColor(msg.messageType)}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-medium text-gray-900">${msg.title}</span>
+                            <span class="ml-2 px-2 py-0.5 text-xs rounded" 
+                                  style="background-color: ${getMessageTypeColor(msg.messageType)}20; color: ${getMessageTypeColor(msg.messageType)}">
+                                ${msg.messageType}
+                            </span>
+                        </div>
+                        <span class="text-xs text-gray-500">${formatDate(msg.sentAt || msg.createdAt)}</span>
+                    </div>
+                    ${msg.content ? `<p class="text-sm text-gray-600 mt-1 truncate">${msg.content}</p>` : ''}
+                    ${msg.sourceHost ? `<p class="text-xs text-gray-400 mt-1">來源: ${msg.sourceHost}</p>` : ''}
+                </div>
+            `).join('');
+        } else {
+            messageContainer.innerHTML = '<p class="text-gray-500 text-center py-4">尚未收到任何訊息</p>';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('recentMessages').innerHTML = 
+            '<p class="text-gray-500 text-center py-4">無法載入訊息歷史</p>';
+    }
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleString('zh-TW', { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+}
+
+async function sendTestMessage() {
+    const btn = document.getElementById('sendTestBtn');
+    const resultDiv = document.getElementById('testResult');
+    
+    btn.disabled = true;
+    btn.textContent = '發送中...';
+    resultDiv.classList.add('hidden');
+    
+    // 注意：測試訊息功能需要有 API Key 權限
+    // 這裡示範的是透過後端專用端點發送
+    resultDiv.innerHTML = `
+        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-yellow-800">
+                <span class="font-medium">⚠️ 測試訊息功能說明</span>
+                <br>
+                實際的測試訊息發送需要透過外部系統（如 Nagios）使用 API Key 呼叫 API。
+                <br>
+                您可以請管理員協助發送測試訊息到您所屬的群組。
+            </p>
+        </div>
+    `;
+    resultDiv.classList.remove('hidden');
+    
+    btn.disabled = false;
+    btn.textContent = '發送測試訊息';
+}
+</script>
+}

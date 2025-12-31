@@ -25,6 +25,9 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection(AppSett
 // 加入控制器服務
 builder.Services.AddControllers();
 
+// 加入 Razor Pages 服務
+builder.Services.AddRazorPages();
+
 // 加入 OpenAPI 支援（.NET 10 內建）
 builder.Services.AddOpenApi();
 
@@ -200,6 +203,12 @@ app.UseAuditLog();
 
 // 健康檢查端點
 app.MapHealthChecks("/health");
+
+// 靜態檔案
+app.UseStaticFiles();
+
+// Razor Pages 路由
+app.MapRazorPages();
 
 // 控制器路由
 app.MapControllers();

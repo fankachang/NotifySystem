@@ -1,0 +1,126 @@
+@page
+@model LineNotify.Api.Pages.WaitingForGroupModel
+@{
+    ViewData["Title"] = "等待分配群組";
+}
+
+<div class="max-w-2xl mx-auto px-4">
+    <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+        <div class="mb-6">
+            <div class="mx-auto w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span class="text-5xl">⏳</span>
+            </div>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">
+            歡迎加入 Line 通知服務！
+        </h1>
+        
+        <div class="text-gray-600 mb-8 space-y-4">
+            <p>
+                您的帳號已成功建立，但目前尚未被分配到任何群組。
+            </p>
+            <p>
+                請聯繫系統管理員將您加入適當的通知群組，
+                <br>加入後您將可以接收該群組的告警通知。
+            </p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+            <h3 class="font-semibold text-blue-800 mb-2">📋 接下來的步驟</h3>
+            <ol class="text-left text-blue-700 text-sm space-y-2 list-decimal list-inside">
+                <li>聯繫您的系統管理員</li>
+                <li>告知您要加入的通知群組（例如：基礎設施團隊、應用程式團隊等）</li>
+                <li>管理員將您加入群組後，您會自動訂閱該群組的訊息類型</li>
+                <li>之後當有告警時，您就會收到 Line 推播通知</li>
+            </ol>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onclick="checkGroupStatus()" 
+                    class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium">
+                重新檢查群組狀態
+            </button>
+            <button onclick="logout()" 
+                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
+                登出
+            </button>
+        </div>
+
+        <div id="userInfo" class="mt-8 p-4 bg-gray-50 rounded-lg text-left hidden">
+            <h3 class="font-semibold text-gray-700 mb-2">您的帳號資訊</h3>
+            <div class="text-sm text-gray-600 space-y-1">
+                <p><span class="font-medium">顯示名稱：</span><span id="displayName"></span></p>
+                <p><span class="font-medium">建立時間：</span><span id="createdAt"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+        window.location.href = '/Login';
+        return;
+    }
+
+    // 顯示使用者資訊
+    if (user.displayName) {
+        document.getElementById('displayName').textContent = user.displayName;
+        document.getElementById('createdAt').textContent = new Date(user.createdAt).toLocaleString('zh-TW');
+        document.getElementById('userInfo').classList.remove('hidden');
+    }
+
+    // 檢查是否已有群組
+    if (user.groups && user.groups.length > 0) {
+        window.location.href = '/Dashboard';
+    }
+});
+
+async function checkGroupStatus() {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch('/api/v1/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const user = data.data;
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            if (user.groups && user.groups.length > 0) {
+                alert('太好了！您已被加入群組，正在跳轉至儀表板...');
+                window.location.href = '/Dashboard';
+            } else {
+                alert('您目前仍未被分配到任何群組，請聯繫管理員。');
+            }
+        } else {
+            alert('無法檢查狀態：' + (data.error?.message || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('發生錯誤，請稍後再試');
+    }
+}
+
+function logout() {
+    const token = localStorage.getItem('token');
+    fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+    }).finally(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+    });
+}
+</script>
+}
