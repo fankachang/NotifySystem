@@ -22,6 +22,9 @@ WORKDIR /app
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# 安裝 curl（用於健康檢查）
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # 建立非 root 使用者執行應用程式
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser

@@ -295,19 +295,19 @@
 
 **目的**: 完善文件與部署配置
 
-- [ ] T089 [P] 更新 appsettings.json 範例配置 src/LineNotify.Api/appsettings.json
-- [ ] T090 [P] 建立 appsettings.Development.example.json src/LineNotify.Api/appsettings.Development.example.json
-- [ ] T091 [P] 完善 Dockerfile 多階段建置 docker/Dockerfile
-- [ ] T092 [P] 建立生產環境 docker-compose.prod.yml docker/docker-compose.prod.yml
-- [ ] T093 [P] 撰寫 API 參考文件 docs/api-reference.md
-- [ ] T094 [P] 撰寫部署指南 docs/deployment.md
-- [ ] T095 [P] 撰寫 Nagios 整合指南 docs/nagios-integration.md
+- [X] T089 [P] 更新 appsettings.json 範例配置 src/LineNotify.Api/appsettings.json
+- [X] T090 [P] 建立 appsettings.Development.example.json src/LineNotify.Api/appsettings.Development.example.json
+- [X] T091 [P] 完善 Dockerfile 多階段建置 docker/Dockerfile
+- [X] T092 [P] 建立生產環境 docker-compose.prod.yml docker/docker-compose.prod.yml
+- [X] T093 [P] 撰寫 API 參考文件 docs/api-reference.md
+- [X] T094 [P] 撰寫部署指南 docs/deployment.md
+- [X] T095 [P] 撰寫 Nagios 整合指南 docs/nagios-integration.md
 - [ ] T096 執行 quickstart.md 驗證完整流程
 
 ### 資料庫備份
 
-- [ ] T097 [P] 配置 MySQL 自動備份腳本與排程 docker/mysql/backup.sh
-- [ ] T098 [P] 在 docker-compose.prod.yml 設定備份 Volume 掛載與 cron 排程
+- [X] T097 [P] 配置 MySQL 自動備份腳本與排程 docker/mysql/backup.sh
+- [X] T098 [P] 在 docker-compose.prod.yml 設定備份 Volume 掛載與 cron 排程
 
 ---
 

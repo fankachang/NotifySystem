@@ -1,0 +1,153 @@
+# Line 通知服務 - 生產環境 Docker Compose 配置
+# 使用方式: docker-compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # Line 通知服務 API
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: linenotify-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-linenotify};User=${MYSQL_USER:-linenotify};Password=${MYSQL_PASSWORD:-LineNotify@Prod2025};
+      - Jwt__Secret=${JWT_SECRET:-PleaseChangeThisToASecureProductionKey!@#$}
+      - Jwt__Issuer=${JWT_ISSUER:-LineNotify}
+      - Jwt__Audience=${JWT_AUDIENCE:-LineNotifyUsers}
+      - Line__ChannelId=${LINE_CHANNEL_ID}
+      - Line__ChannelSecret=${LINE_CHANNEL_SECRET}
+      - Line__CallbackUrl=${LINE_CALLBACK_URL}
+      - Line__MessagingChannelAccessToken=${LINE_MESSAGING_ACCESS_TOKEN}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - linenotify-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # MySQL 資料庫
+  mysql:
+    image: mysql:8.0
+    container_name: linenotify-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-LineNotify@Root2025}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-linenotify}
+      MYSQL_USER: ${MYSQL_USER:-linenotify}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-LineNotify@Prod2025}
+      TZ: Asia/Taipei
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql-backup:/backup
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_connections=200
+      - --innodb_buffer_pool_size=256M
+      - --slow_query_log=1
+      - --slow_query_log_file=/var/lib/mysql/slow-query.log
+      - --long_query_time=2
+    networks:
+      - linenotify-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-LineNotify@Root2025}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # MySQL 備份服務
+  mysql-backup:
+    image: mysql:8.0
+    container_name: linenotify-mysql-backup
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-linenotify}
+      MYSQL_USER: ${MYSQL_USER:-linenotify}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-LineNotify@Prod2025}
+    volumes:
+      - mysql-backup:/backup
+      - ./mysql/backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        chmod +x /backup.sh
+        echo "0 3 * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        crond -f -l 2
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - linenotify-network
+
+  # Nginx 反向代理（可選）
+  nginx:
+    image: nginx:alpine
+    container_name: linenotify-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - api
+    networks:
+      - linenotify-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - with-nginx
+
+networks:
+  linenotify-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  mysql-backup:
+    driver: local
+  nginx-logs:
+    driver: local
