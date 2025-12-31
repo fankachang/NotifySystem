@@ -271,23 +271,23 @@
 
 ### 群組篩選與時段控制
 
-- [ ] T081 [P] 實作來源主機/服務萬用字元篩選邏輯 src/LineNotify.Api/Services/MessageDispatchService.cs
-- [ ] T082 [P] 實作接收時段與靜音時段判斷邏輯 src/LineNotify.Api/Services/MessageDispatchService.cs
-- [ ] T083 實作重複告警抑制機制 src/LineNotify.Api/Services/MessageDispatchService.cs
+- [X] T081 [P] 實作來源主機/服務萬用字元篩選邏輯 src/LineNotify.Api/Services/MessageDispatchService.cs
+- [X] T082 [P] 實作接收時段與靜音時段判斷邏輯 src/LineNotify.Api/Services/MessageDispatchService.cs
+- [X] T083 實作重複告警抑制機制 src/LineNotify.Api/Services/MessageDispatchService.cs
 
 ### Rate Limiting
 
-- [ ] T084 實作 Rate Limiting 中介軟體 src/LineNotify.Api/Middleware/RateLimitingMiddleware.cs
-- [ ] T085 在 Program.cs 配置 Rate Limiting 規則 src/LineNotify.Api/Program.cs
+- [X] T084 實作 Rate Limiting 中介軟體 src/LineNotify.Api/Middleware/RateLimitingMiddleware.cs
+- [X] T085 在 Program.cs 配置 Rate Limiting 規則 src/LineNotify.Api/Program.cs
 
 ### 資料清理
 
-- [ ] T086 實作 90 天資料自動清理背景服務 src/LineNotify.Api/BackgroundServices/DataCleanupService.cs
+- [X] T086 實作 90 天資料自動清理背景服務 src/LineNotify.Api/BackgroundServices/DataCleanupService.cs
 
 ### Edge Cases 處理
 
-- [ ] T087 實作訊息內容驗證與截斷邏輯 src/LineNotify.Api/Services/LineMessagingService.cs
-- [ ] T088 實作 Line 綁定失效檢測與處理 src/LineNotify.Api/Services/LineMessagingService.cs
+- [X] T087 實作訊息內容驗證與截斷邏輯 src/LineNotify.Api/Services/LineMessagingService.cs
+- [X] T088 實作 Line 綁定失效檢測與處理 src/LineNotify.Api/Services/LineMessagingService.cs
 
 ---
 

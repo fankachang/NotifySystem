@@ -168,9 +168,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");
 
+// 配置 Rate Limiting
+builder.Services.AddRateLimiting(builder.Configuration);
+
 // 註冊背景服務
 builder.Services.AddHostedService<LineNotify.Api.BackgroundServices.MessageSenderService>();
 builder.Services.AddHostedService<LineNotify.Api.BackgroundServices.RetryService>();
+builder.Services.AddHostedService<LineNotify.Api.BackgroundServices.DataCleanupService>();
 
 // ===========================================
 // 建置應用程式
@@ -202,6 +206,9 @@ app.UseCors();
 
 // API Key 認證（在 JWT 認證之前）
 app.UseApiKeyAuth();
+
+// Rate Limiting（在認證之後）
+app.UseRateLimiting();
 
 // 認證與授權
 app.UseAuthentication();
